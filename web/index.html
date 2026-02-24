@@ -326,6 +326,12 @@
                     </div>
                 </div>
 
+                
+                <div class="control-group">
+                    <label>Exploded View <span class="value-display" id="exploded_val">0%</span></label>
+                    <input type="range" id="exploded_view" class="slider" min="0" max="100" value="0" oninput="updateExplodedView()">
+                </div>
+
                 <button id="generate" class="primary-btn">Update Model</button>
 
                 <div id="export-controls" style="margin-top: 20px; display: none;">
@@ -416,11 +422,35 @@
         generateModel();
 
         
+        
         // --- NEW FEATURES ---
+        
+        async function downloadBOM() {
+            try {
+                const response = await fetch('/bom');
+                if (!response.ok) throw new Error('BOM generation failed');
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'staircase_takeoff.csv';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (error) {
+                console.error('Error downloading BOM:', error);
+                alert('Failed to download takeoff. Check server logs.');
+            }
+        }
+        window.downloadBOM = downloadBOM;
+
         let originalPositions = new Map();
 
         function updateExplodedView() {
-            const val = parseInt(document.getElementById('exploded_view').value);
+            const expElem = document.getElementById('exploded_view'); if(!expElem) return; const val = parseInt(expElem.value);
             document.getElementById('exploded_val').innerText = val + '%';
             
             if (!model) return;
@@ -479,8 +509,8 @@
                 document.getElementById('s_top_steps_val').innerText = config.s_top_steps;
                 
                 // Clear exploded view
-                document.getElementById('exploded_view').value = 0;
-                document.getElementById('exploded_val').innerText = '0%';
+                if(document.getElementById('exploded_view')) if(document.getElementById('exploded_view')) document.getElementById('exploded_view').value = 0;
+                if(document.getElementById('exploded_val')) if(document.getElementById('exploded_val')) document.getElementById('exploded_val').innerText = '0%';
                 if (model) {
                     model.traverse(child => {
                         if (child.isMesh && child.name.startsWith("part_")) {

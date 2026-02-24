@@ -277,7 +277,11 @@ def _winder_treads_risers(num_steps, rise, winder_width, inner_r,
 def _winder_ribs(num_steps, rise, winder_width, inner_r,
                  base_z, waist, rib_spacing, rib_width, rib_depth,
                  pivot_global):
-    """Radially-fanned CNC-cut plywood soffit ribs for the winder."""
+    """Radially-fanned CNC-cut plywood soffit ribs for the winder.
+    
+    OPTIMIZED: The rib geometry is calculated exactly (clipped to the outer
+    rectangular corner) so no 3D boolean intersection is needed later.
+    """
     px, py = pivot_global
     arc_len = (inner_r + winder_width) / 2 * math.pi / 2
     n_ribs = max(3, int(arc_len / rib_spacing) + 1)
@@ -285,8 +289,20 @@ def _winder_ribs(num_steps, rise, winder_width, inner_r,
     for i in range(n_ribs):
         t = i / (n_ribs - 1) if n_ribs > 1 else 0
         angle_deg = -90 + t * 90
+        a_rad = math.radians(angle_deg)
         z_soffit = base_z + t * num_steps * rise - waist
-        radial_len = winder_width - inner_r
+        
+        # Calculate exact radial length to the rectangular outer boundary
+        if angle_deg < -45:
+            if abs(angle_deg + 90) < 1e-6:
+                r_outer = winder_width
+            else:
+                r_outer = abs(-winder_width / math.sin(a_rad))
+        else:
+            r_outer = abs(winder_width / math.cos(a_rad))
+            
+        radial_len = r_outer - inner_r
+        
         rib = Box(radial_len, rib_width, rib_depth,
                   align=(Align.MIN, Align.CENTER, Align.MIN))
         rib = rib.translate((inner_r, 0, 0))
@@ -463,7 +479,7 @@ def build_structural_staircase(config):
         w_steps, rise, winder_width, inner_r,
         winder_base_z, waist, rib_sp, rib_w, rib_d,
         pivot_global=(pivot_x, pivot_y))
-    all_ribs.extend([(p & volumetric) for p in wrb])
+    all_ribs.extend(wrb)
 
     # -----------------------------------------------------------------------
     # 3. TOP FLIGHT — rotated 90°, inner edge at X=pivot_x+inner_r
