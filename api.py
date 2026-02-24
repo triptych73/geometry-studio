@@ -21,6 +21,7 @@ from staircase_structural import (
     DEFAULT_CONFIG as STRUCT_DEFAULTS,
     C_TREAD, C_RISER, C_STRINGER, C_CARRIAGE, C_RIB, C_PLASTER, C_HANDRAIL,
 )
+from bom_export import generate_csv
 from cnc_nesting import extract_2d_profile, nest_parts_optimized, split_with_scarf_joint
 
 app = FastAPI()
@@ -50,17 +51,17 @@ class StaircaseConfig(BaseModel):
     s_top_steps: int = 8
     extend_top_flight: float = 300.0
     unified_soffit: bool = True
-    nosing: Optional[float] = 20.0
-    tread_thickness: Optional[float] = None
-    riser_thickness: Optional[float] = None
-    stringer_width: Optional[float] = None
-    stringer_depth: Optional[float] = None
-    carriage_width: Optional[float] = None
-    carriage_depth: Optional[float] = None
-    rib_spacing: Optional[float] = None
-    rib_width: Optional[float] = None
-    rib_depth: Optional[float] = None
-    plaster_thickness: Optional[float] = None
+    nosing: float = 20.0
+    tread_thickness: float = 20.0
+    riser_thickness: float = 20.0
+    stringer_width: float = 50.0
+    stringer_depth: float = 250.0
+    carriage_width: float = 50.0
+    carriage_depth: float = 250.0
+    rib_spacing: float = 400.0
+    rib_width: float = 18.0
+    rib_depth: float = 150.0
+    plaster_thickness: float = 10.0
 
 class CncNestRequest(BaseModel):
     config: StaircaseConfig
@@ -410,6 +411,51 @@ async def generate_staircase(config: StaircaseConfig):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
+@app.post("/export/bom")
+async def export_bom_csv(config: StaircaseConfig):
+    """Generates a Bill of Materials CSV for the staircase."""
+    try:
+        config_dict = config.dict()
+        elements = build_structural_staircase(config_dict)
+
+        manifest_categories = []
+        mesh_index = 0
+        
+        for cat_name in CATEGORY_ORDER:
+            parts = elements.get(cat_name, [])
+            if not parts:
+                continue
+            
+            cat_manifest = {
+                "name": cat_name,
+                "parts": []
+            }
+            
+            for i, p in enumerate(parts):
+                cat_manifest["parts"].append({
+                    "name": f"{cat_name}_{i+1}",
+                    "volume_mm3": p.volume,
+                })
+                mesh_index += 1
+            
+            manifest_categories.append(cat_manifest)
+
+        manifest_data = {"categories": manifest_categories}
+        csv_data = generate_csv(manifest_data)
+
+        from fastapi.responses import PlainTextResponse
+        return PlainTextResponse(
+            content=csv_data,
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=staircase_bom.csv"}
+        )
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/export/autocad")
 async def export_autocad_bundle(config: StaircaseConfig):
     """Generates a ZIP bundle with per-category STEP files and an AutoLISP import script."""
@@ -579,4 +625,4 @@ async def export_dxf_file(config: StaircaseConfig):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8015)
+    uvicorn.run(app, host="0.0.0.0", port=8000)

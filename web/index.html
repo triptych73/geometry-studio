@@ -332,7 +332,11 @@
                     <h2>Export Assets</h2>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                         <button id="download-glb" style="padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 6px; font-size: 0.7rem;">3D GLB</button>
-                        <button id="download-dxf" style="padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 6px; font-size: 0.7rem;">CNC DXF</button>
+                        
+            <button id="download-bom" class="generate-btn" style="background: #10b981; margin-top: 10px;" onclick="downloadBOM()">
+                Download Takeoff (CSV)
+            </button>
+            <button id="download-dxf" style="padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 6px; font-size: 0.7rem;">CNC DXF</button>
                     </div>
                 </div>
             </div>
