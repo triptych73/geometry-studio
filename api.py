@@ -158,9 +158,9 @@ async def export_cnc_dxf(req: CncNestRequest):
         result = nest_parts_optimized(final_part_data, req.sheet_width, req.sheet_height)
         
         doc = ezdxf.new()
-        doc.layers.add("NESTED_CUTS", color=7)
-        doc.layers.add("LABELS", color=1)
-        doc.layers.add("SHEET_BORDER", color=8)
+        doc.layers.add("0_PERIMETER", color=7)
+        doc.layers.add("0_HOLES", color=3)
+        doc.layers.add("0_TEXT", color=1)
         msp = doc.modelspace()
         
         for bin_idx, parts in result["sheets"].items():
@@ -559,8 +559,9 @@ async def export_dxf_file(config: StaircaseConfig):
         elements = build_structural_staircase(config_dict)
         
         doc = ezdxf.new()
-        doc.layers.add("PROFILES", color=7)
-        doc.layers.add("LABELS", color=1)
+        doc.layers.add("0_PERIMETER", color=7)
+        doc.layers.add("0_HOLES", color=3)
+        doc.layers.add("0_TEXT", color=1)
         msp = doc.modelspace()
         
         spacing = 1000.0

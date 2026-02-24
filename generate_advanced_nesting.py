@@ -51,7 +51,9 @@ def generate_full_manufacturing_report():
                             "name": f"{cat}_{i+1}{suffix}",
                             "width": prof["width"],
                             "height": prof["height"],
-                            "points": prof["points"]
+                            "points": prof.get("points", []),
+                            "outer": prof.get("outer", prof.get("points", [])),
+                            "inner": prof.get("inner", [])
                         })
                         global_idx += 1
         
@@ -88,20 +90,40 @@ def generate_full_manufacturing_report():
             svg_lines.append(f'<text x="20" y="{y_offset + 60}" font-size="50" font-weight="bold" fill="red">SHEET {bin_idx + 1} ({group_name})</text>')
             svg_lines.append(f'<text x="20" y="{y_offset + 110}" font-size="30" fill="gray">Algo: {algo_name} | Efficiency: {result["efficiency"]}%</text>')
             
+            import html
             for p in parts:
-                pts = p["points"]
-                final_pts = []
-                for px, py in pts:
-                    if p["is_rotated"]:
+                safe_name = html.escape(str(p["name"]))
+                
+                # Render Outer Perimeter
+                outer_pts = p.get("outer", p.get("points", []))
+                final_outer = []
+                for px, py in outer_pts:
+                    if p.get("is_rotated", False):
                         nx = round(float(p["x"] + py), 2)
                         ny = round(float(y_offset + p["y"] + px), 2)
                     else:
                         nx = round(float(p["x"] + px), 2)
                         ny = round(float(y_offset + p["y"] + py), 2)
-                    final_pts.append(f"{nx},{ny}")
+                    final_outer.append(f"{nx},{ny}")
                 
-                svg_lines.append(f'<polygon points="{" ".join(final_pts)}" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />')
-                svg_lines.append(f'<text x="{p["x"]+10}" y="{y_offset + p["y"]+30}" font-size="20" fill="black">{p["name"]}</text>')
+                if final_outer:
+                    svg_lines.append(f'<polygon points="{" ".join(final_outer)}" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />')
+                
+                # Render Inner Holes
+                for inner_loop in p.get("inner", []):
+                    final_inner = []
+                    for px, py in inner_loop:
+                        if p.get("is_rotated", False):
+                            nx = round(float(p["x"] + py), 2)
+                            ny = round(float(y_offset + p["y"] + px), 2)
+                        else:
+                            nx = round(float(p["x"] + px), 2)
+                            ny = round(float(y_offset + p["y"] + py), 2)
+                        final_inner.append(f"{nx},{ny}")
+                    if final_inner:
+                        svg_lines.append(f'<polygon points="{" ".join(final_inner)}" fill="white" stroke="red" stroke-width="1.5" stroke-dasharray="4" />')
+                        
+                svg_lines.append(f'<text x="{p["x"]+10}" y="{y_offset + p["y"]+30}" font-size="20" fill="black">{safe_name}</text>')
 
         svg_lines.append('</svg>')
         output_file = f"nesting_{group_name.lower()}.svg"

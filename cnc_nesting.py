@@ -34,55 +34,54 @@ def extract_2d_profile(part):
     f_plane = Plane(face.center(), z_dir=face.normal_at(face.center()))
     
     # 3. Extract vertices in sequential order by walking edges
-    wire = face.outer_wire()
-    edges = wire.edges()
-    print(f"    [ENGINE] Walking {len(edges)} edges for perimeter...", flush=True)
+    def wire_to_pts(w):
+        edges = w.edges()
+        ordered_pts = []
+        for edge in edges:
+            try:
+                p = edge.start_point()
+                lv = f_plane.to_local_coords(p)
+                pt = (round(float(lv.X), 2), round(float(lv.Y), 2))
+                if not ordered_pts or pt != ordered_pts[-1]:
+                    ordered_pts.append(pt)
+            except Exception:
+                continue
+        if edges:
+            p_final = edges[-1].end_point()
+            lv_f = f_plane.to_local_coords(p_final)
+            pt_f = (round(float(lv_f.X), 2), round(float(lv_f.Y), 2))
+            if pt_f != ordered_pts[0] and pt_f != ordered_pts[-1]:
+                ordered_pts.append(pt_f)
+        return ordered_pts
+
+    outer_pts = wire_to_pts(face.outer_wire())
     
-    ordered_pts = []
-    for edge in edges:
-        try:
-            p = edge.start_point()
-            # Convert to local 2D coords
-            lv = f_plane.to_local_coords(p)
-            pt = (round(float(lv.X), 2), round(float(lv.Y), 2))
-            
-            # Add point if not duplicate of previous
-            if not ordered_pts or pt != ordered_pts[-1]:
-                ordered_pts.append(pt)
-        except Exception:
-            continue
-            
-    # Ensure the loop is closed if needed
-    if edges:
-        p_final = edges[-1].end_point()
-        lv_f = f_plane.to_local_coords(p_final)
-        pt_f = (round(float(lv_f.X), 2), round(float(lv_f.Y), 2))
-        if pt_f != ordered_pts[0] and pt_f != ordered_pts[-1]:
-            ordered_pts.append(pt_f)
-    
-    if len(ordered_pts) < 3:
-        print(f"    [ENGINE] ERROR: Only {len(ordered_pts)} points found. Perimeter failed.", flush=True)
+    if len(outer_pts) < 3:
+        print(f"    [ENGINE] ERROR: Only {len(outer_pts)} points found. Perimeter failed.", flush=True)
         return None
         
-    # 4. Calculate 2D bounding box
-    xs = [p[0] for p in ordered_pts]
-    ys = [p[1] for p in ordered_pts]
+    xs = [p[0] for p in outer_pts]
+    ys = [p[1] for p in outer_pts]
     min_x, max_x = min(xs), max(xs)
     min_y, max_y = min(ys), max(ys)
     
     width = round(max_x - min_x, 2)
     height = round(max_y - min_y, 2)
-    print(f"    [ENGINE] Profile Extracted: {width}x{height}mm ({len(ordered_pts)} vertices)", flush=True)
-    if width > 0 and height > 0:
-        print(f"    [ENGINE] Perimeter Start: {ordered_pts[:2]}", flush=True)
     
-    # 5. Normalise points so the bounding box starts at 0,0
-    normalised_pts = [(round(p[0] - min_x, 2), round(p[1] - min_y, 2)) for p in ordered_pts]
+    norm_outer = [(round(p[0] - min_x, 2), round(p[1] - min_y, 2)) for p in outer_pts]
     
+    norm_inners = []
+    for iw in face.inner_wires():
+        ipts = wire_to_pts(iw)
+        if len(ipts) >= 3:
+            norm_inners.append([(round(p[0] - min_x, 2), round(p[1] - min_y, 2)) for p in ipts])
+            
     return {
         "width": width,
         "height": height,
-        "points": normalised_pts,
+        "outer": norm_outer,
+        "inner": norm_inners,
+        "points": norm_outer,
         "area": face.area
     }
 
@@ -119,24 +118,27 @@ def split_with_scarf_joint(part: Part, sheet_width: float):
     with BuildPart() as tool_builder:
         with BuildSketch(Plane.XY):
             with BuildLine():
-                # A Triple-Tooth "Puzzle" Profile
-                # This profile cuts the "A" half (keeps everything to the left/bottom)
-                p_min = -5000 # Large enough to cover part
+                # Continuous Multi-Tooth Puzzle Profile (Box Joint)
+                # This cuts the "A" half (keeps everything to the left/bottom)
+                p_min = -5000
                 p_max = 5000
                 
-                # We'll define the zig-zag along the X-equivalent axis of the cut
-                # And the depth along the Y-equivalent
-                pts = [
-                    (p_min, p_min),
-                    (split_pos - overlap/2, p_min),
-                    (split_pos - overlap/2, -20),
-                    (split_pos - overlap/2 + tooth_w, -20),
-                    (split_pos - overlap/2 + tooth_w, 20),
-                    (split_pos + overlap/2 - tooth_w, 20),
-                    (split_pos + overlap/2 - tooth_w, p_max),
-                    (p_min, p_max),
-                    (p_min, p_min)
-                ]
+                pts = [(p_min, p_min)]
+                y_curr = -2000
+                x_left = split_pos - overlap/2
+                x_right = split_pos + overlap/2
+                
+                pts.append((x_left, y_curr))
+                while y_curr < 2000:
+                    pts.append((x_left, y_curr + 40))
+                    pts.append((x_right, y_curr + 40))
+                    pts.append((x_right, y_curr + 80))
+                    pts.append((x_left, y_curr + 80))
+                    y_curr += 80
+                
+                pts.append((x_left, p_max))
+                pts.append((p_min, p_max))
+                pts.append((p_min, p_min))
                 Polyline(pts)
             make_face()
         extrude(amount=h, both=True)
@@ -158,7 +160,7 @@ def split_with_scarf_joint(part: Part, sheet_width: float):
     
     return results
 
-def nest_parts_optimized(part_data, sheet_width=2440, sheet_height=1220):
+def nest_parts_optimized(part_data, sheet_width=2440, sheet_height=1220, spacing=8.0):
     """Runs multiple packing algorithms and returns the most efficient one."""
     algos = [
         rectpack.MaxRectsBaf,
@@ -176,14 +178,14 @@ def nest_parts_optimized(part_data, sheet_width=2440, sheet_height=1220):
     for algo in algos:
         packer = rectpack.newPacker(mode=rectpack.PackingMode.Offline, bin_algo=rectpack.PackingBin.BFF, pack_algo=algo, rotation=True)
         for _ in range(50): packer.add_bin(sheet_width, sheet_height)
-        for p in fittable: packer.add_rect(p["width"], p["height"], rid=p["id"])
+        for p in fittable: packer.add_rect(p["width"] + spacing, p["height"] + spacing, rid=p["id"])
         packer.pack()
         
         rects = packer.rect_list()
         num_sheets = max([r[0] for r in rects]) + 1 if rects else 0
         
         packed_ids = [r[5] for r in rects]
-        packed_area = sum(p["width"] * p["height"] for p in fittable if p["id"] in packed_ids)
+        packed_area = sum((p["width"] + spacing) * (p["height"] + spacing) for p in fittable if p["id"] in packed_ids)
         total_area = num_sheets * sheet_width * sheet_height
         efficiency = packed_area / total_area if total_area > 0 else 0
         
@@ -195,8 +197,13 @@ def nest_parts_optimized(part_data, sheet_width=2440, sheet_height=1220):
                 if bin_idx not in sheets: sheets[bin_idx] = []
                 orig = next(p for p in fittable if p["id"] == rid)
                 sheets[bin_idx].append({
-                    "id": rid, "name": orig["name"], "x": x, "y": y, "width": w, "height": h, 
-                    "is_rotated": not (abs(w - orig["width"]) < 0.1), "points": orig["points"]
+                    "id": rid, "name": orig["name"], 
+                    "x": x + spacing/2, "y": y + spacing/2, 
+                    "width": w - spacing, "height": h - spacing, 
+                    "is_rotated": not (abs((w - spacing) - orig["width"]) < 0.1), 
+                    "points": orig["points"],
+                    "outer": orig.get("outer", orig["points"]),
+                    "inner": orig.get("inner", [])
                 })
             best_result = {
                 "algo": str(algo), "efficiency": round(efficiency * 100, 2),
