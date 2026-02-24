@@ -1,0 +1,68 @@
+<svg width="488.0" height="762.0" viewBox="0 0 2440.0 3810.0" xmlns="http://www.w3.org/2000/svg">
+<rect width="100%" height="100%" fill="white" />
+<rect x="0" y="0.0" width="2440.0" height="1220.0" fill="none" stroke="black" stroke-width="10" />
+<text x="20" y="60.0" font-size="50" font-weight="bold" fill="red">SHEET 1 (20mm_Timber)</text>
+<text x="20" y="110.0" font-size="30" fill="gray">Algo: MaxRectsBaf | Efficiency: 72.92%</text>
+<polygon points="819.87,0.0 833.7,380.14 37.91,879.01 0.0,843.76 439.74,13.83" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="10" y="30.0" font-size="20" fill="black">treads_5</text>
+<polygon points="1629.48,0.0 1648.37,519.27 848.9,548.36 833.7,498.88" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="843.7" y="30.0" font-size="20" fill="black">treads_6</text>
+<polygon points="1648.37,18.89 2167.64,0.0 1727.91,829.93 1677.45,818.36" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="1658.37" y="30.0" font-size="20" fill="black">treads_4</text>
+<polygon points="2167.64,800.0 2167.64,0.0 2437.64,0.0 2437.64,800.0" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="2177.64" y="30.0" font-size="20" fill="black">treads_1</text>
+<polygon points="1633.7,548.36 833.7,548.36 833.7,818.36 1633.7,818.36" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="843.7" y="578.36" font-size="20" fill="black">treads_2</text>
+<polygon points="1633.7,818.36 833.7,818.36 833.7,1088.36 1633.7,1088.36" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="843.7" y="848.36" font-size="20" fill="black">treads_3</text>
+<polygon points="0.0,879.01 800.0,879.01 800.0,1149.01 0.0,1149.01" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="10" y="909.01" font-size="20" fill="black">treads_7</text>
+<polygon points="1633.7,829.93 2433.7,829.93 2433.7,1099.93 1633.7,1099.93" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="1643.7" y="859.93" font-size="20" fill="black">treads_8</text>
+<rect x="0" y="1270.0" width="2440.0" height="1220.0" fill="none" stroke="black" stroke-width="10" />
+<text x="20" y="1330.0" font-size="50" font-weight="bold" fill="red">SHEET 2 (20mm_Timber)</text>
+<text x="20" y="1380.0" font-size="30" fill="gray">Algo: MaxRectsBaf | Efficiency: 72.92%</text>
+<polygon points="0.0,1270.0 800.0,1270.0 800.0,1540.0 0.0,1540.0" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="10" y="1300.0" font-size="20" fill="black">treads_9</text>
+<polygon points="800.0,1270.0 1600.0,1270.0 1600.0,1540.0 800.0,1540.0" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="810.0" y="1300.0" font-size="20" fill="black">treads_10</text>
+<polygon points="1600.0,1270.0 2400.0,1270.0 2400.0,1540.0 1600.0,1540.0" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="1610.0" y="1300.0" font-size="20" fill="black">treads_11</text>
+<polygon points="0.0,1540.0 800.0,1540.0 800.0,1810.0 0.0,1810.0" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="10" y="1570.0" font-size="20" fill="black">treads_12</text>
+<polygon points="800.0,1540.0 1600.0,1540.0 1600.0,1810.0 800.0,1810.0" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="810.0" y="1570.0" font-size="20" fill="black">treads_13</text>
+<polygon points="1600.0,1540.0 2400.0,1540.0 2400.0,1810.0 1600.0,1810.0" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="1610.0" y="1570.0" font-size="20" fill="black">treads_14</text>
+<polygon points="0.0,1810.0 939.24,1810.0 939.24,2030.0 0.0,2030.0" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="10" y="1840.0" font-size="20" fill="black">risers_5</text>
+<polygon points="1878.48,2030.0 939.24,2030.0 939.24,1810.0 1878.48,1810.0" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="949.24" y="1840.0" font-size="20" fill="black">risers_6</text>
+<polygon points="800.0,2250.0 800.0,2030.0 0.0,2030.0 0.0,2250.0" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="10" y="2060.0" font-size="20" fill="black">risers_1</text>
+<polygon points="800.0,2470.0 800.0,2250.0 0.0,2250.0 0.0,2470.0" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="10" y="2280.0" font-size="20" fill="black">risers_2</text>
+<polygon points="1600.0,2250.0 1600.0,2030.0 800.0,2030.0 800.0,2250.0" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="810.0" y="2060.0" font-size="20" fill="black">risers_3</text>
+<polygon points="1600.0,2030.0 2400.0,2030.0 2400.0,2250.0 1600.0,2250.0" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="1610.0" y="2060.0" font-size="20" fill="black">risers_4</text>
+<polygon points="1600.0,2250.0 1600.0,2470.0 800.0,2470.0 800.0,2250.0" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="810.0" y="2280.0" font-size="20" fill="black">risers_7</text>
+<polygon points="2400.0,2250.0 2400.0,2470.0 1600.0,2470.0 1600.0,2250.0" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="1610.0" y="2280.0" font-size="20" fill="black">risers_8</text>
+<rect x="0" y="2540.0" width="2440.0" height="1220.0" fill="none" stroke="black" stroke-width="10" />
+<text x="20" y="2600.0" font-size="50" font-weight="bold" fill="red">SHEET 3 (20mm_Timber)</text>
+<text x="20" y="2650.0" font-size="30" fill="gray">Algo: MaxRectsBaf | Efficiency: 72.92%</text>
+<polygon points="800.0,2540.0 800.0,2760.0 0.0,2760.0 0.0,2540.0" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="10" y="2570.0" font-size="20" fill="black">risers_9</text>
+<polygon points="1600.0,2540.0 1600.0,2760.0 800.0,2760.0 800.0,2540.0" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="810.0" y="2570.0" font-size="20" fill="black">risers_10</text>
+<polygon points="2400.0,2540.0 2400.0,2760.0 1600.0,2760.0 1600.0,2540.0" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="1610.0" y="2570.0" font-size="20" fill="black">risers_11</text>
+<polygon points="800.0,2760.0 800.0,2980.0 0.0,2980.0 0.0,2760.0" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="10" y="2790.0" font-size="20" fill="black">risers_12</text>
+<polygon points="1600.0,2760.0 1600.0,2980.0 800.0,2980.0 800.0,2760.0" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="810.0" y="2790.0" font-size="20" fill="black">risers_13</text>
+<polygon points="2400.0,2760.0 2400.0,2980.0 1600.0,2980.0 1600.0,2760.0" fill="rgba(100,150,255,0.3)" stroke="blue" stroke-width="2" />
+<text x="1610.0" y="2790.0" font-size="20" fill="black">risers_14</text>
+</svg>

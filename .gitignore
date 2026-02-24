@@ -1,0 +1,14 @@
+
+venv/
+venv_new/
+__pycache__/
+*.log
+logs/
+output/
+*.svg
+.DS_Store
+venv/
+venv_new/
+__pycache__/
+*.so
+*.log

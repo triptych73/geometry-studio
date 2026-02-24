@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Staircase Studio 🎩</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: rgba(15, 23, 42, 0.9);
+            --accent: #38bdf8;
+            --accent-warm: #f59e0b;
+            --text: #f8fafc;
+            --header-h: 60px;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Navigation Bar */
+        header {
+            height: var(--header-h);
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            z-index: 1000;
+            justify-content: space-between;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand h1 {
+            font-size: 1.1rem;
+            margin: 0;
+            color: var(--accent);
+            white-space: nowrap;
+        }
+
+        /* View Toggle (Relocated to Header) */
+        .view-switcher {
+            display: flex;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 4px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .view-btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .view-btn.active {
+            background: var(--accent);
+            color: white;
+            box-shadow: 0 2px 8px rgba(56, 189, 248, 0.4);
+        }
+
+        #viewport-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #viewport {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Side Panels (Drawer Style) */
+        .panel {
+            position: absolute;
+            top: 15px;
+            bottom: 15px;
+            width: 320px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            z-index: 500;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .panel-content::-webkit-scrollbar { width: 4px; }
+        .panel-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+        .left-panel { left: 15px; }
+        .right-panel { right: 15px; }
+
+        .panel.minimised {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .left-panel.minimised { transform: translateX(-100px); }
+        .right-panel.minimised { transform: translateX(100px); }
+
+        /* Floating Toggle Buttons */
+        .drawer-toggle {
+            position: absolute;
+            top: 20px;
+            width: 44px;
+            height: 44px;
+            background: var(--accent);
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 600;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            font-size: 1.2rem;
+            border: none;
+            color: var(--bg-color);
+            transition: transform 0.2s;
+        }
+
+        .drawer-toggle:active { transform: scale(0.9); }
+        #toggle-left { left: 20px; }
+        #toggle-right { right: 20px; }
+
+        /* UI Elements */
+        h2 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin: 25px 0 12px;
+            opacity: 0.5;
+            color: var(--accent-warm);
+        }
+
+        .control-group { margin-bottom: 16px; }
+        label { display: flex; font-size: 0.85rem; margin-bottom: 8px; justify-content: space-between; }
+        .value-display { color: var(--accent); font-weight: 700; }
+
+        input[type="range"] { width: 100%; height: 24px; accent-color: var(--accent); cursor: pointer; }
+        
+        select, input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .primary-btn {
+            width: 100%;
+            background: var(--accent);
+            color: var(--bg-color);
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+        }
+
+        /* CNC specific */
+        .cnc-panel { display: none; }
+        .cnc-panel.visible { display: flex; }
+        #cnc-canvas { background: #000; width: 100%; height: 300px; border-radius: 8px; margin: 15px 0; border: 1px solid rgba(255,255,255,0.1); }
+
+        /* Loading */
+        .loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .spinner { width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            .panel { width: calc(100vw - 30px); }
+            .brand h1 { font-size: 0.9rem; }
+            header { padding: 0 10px; }
+            .view-btn { padding: 6px 8px; font-size: 0.75rem; }
+        }
+
+        /* Tree Styles */
+        .category-summary { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .parts-list { padding-left: 15px; margin: 8px 0; border-left: 2px solid var(--accent); }
+        .part-node { padding: 8px; border-radius: 6px; font-size: 0.85rem; display: flex; align-items: center; cursor: pointer; }
+        .part-node.selected { background: rgba(56, 189, 248, 0.2); color: var(--accent); }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="brand">
+            <h1>Staircase Studio <span id="mode-badge" style="font-size: 0.6rem; padding: 2px 6px; background: var(--accent-warm); color: black; border-radius: 4px; margin-left: 5px;">V3</span></h1>
+        </div>
+        
+        <div class="view-switcher">
+            <div class="view-btn active" id="view-3d">3D MODEL</div>
+            <div class="view-btn" id="view-cnc">MANUFACTURING</div>
+        </div>
+
+        <div style="width: 40px;"></div> <!-- Spacer -->
+    </header>
+
+    <div id="viewport-container">
+        <div id="viewport"></div>
+        
+        <button class="drawer-toggle" id="toggle-left" title="Settings">⚙️</button>
+        <button class="drawer-toggle" id="toggle-right" title="Parts">📁</button>
+
+        <!-- Left Settings Drawer -->
+        <div class="panel left-panel" id="controls-panel">
+            <div class="panel-content">
+                <div class="control-group">
+                    <label>Model Mode</label>
+                    <select id="model_type">
+                        <option value="volumetric">Volumetric (Concept)</option>
+                        <option value="structural" selected>Structural (Precision)</option>
+                    </select>
+                </div>
+
+                <h2>Geometry</h2>
+                <div class="control-group">
+                    <label>Width <span class="value-display" id="width-val">800</span></label>
+                    <input type="range" id="width" min="600" max="1500" step="50" value="800">
+                </div>
+                <div class="control-group">
+                    <label>Rise <span class="value-display" id="rise-val">220</span></label>
+                    <input type="range" id="rise" min="150" max="250" step="5" value="220">
+                </div>
+                <div class="control-group">
+                    <label>Going <span class="value-display" id="going-val">250</span></label>
+                    <input type="range" id="going" min="200" max="350" step="5" value="250">
+                </div>
+                <div class="control-group">
+                    <label>Inner Radius <span class="value-display" id="inner_r-val">100</span></label>
+                    <input type="range" id="inner_r" min="0" max="500" step="25" value="100">
+                </div>
+
+                <h2>Flights</h2>
+                <div class="control-group">
+                    <label>Bottom Steps <span class="value-display" id="s_bottom_steps-val">3</span></label>
+                    <input type="range" id="s_bottom_steps" min="0" max="15" step="1" value="3">
+                </div>
+                <div class="control-group">
+                    <label>Winder Steps <span class="value-display" id="winder_steps-val">3</span></label>
+                    <input type="range" id="winder_steps" min="2" max="5" step="1" value="3">
+                </div>
+                <div class="control-group">
+                    <label>Top Steps <span class="value-display" id="s_top_steps-val">8</span></label>
+                    <input type="range" id="s_top_steps" min="0" max="15" step="1" value="8">
+                </div>
+
+                <div id="structural-controls">
+                    <h2>Precision Details</h2>
+                    <div class="control-group">
+                        <label>Tread Overhang <span class="value-display" id="nosing-val">20</span></label>
+                        <input type="range" id="nosing" min="0" max="40" step="2" value="20">
+                    </div>
+                    <div class="control-group">
+                        <label>Timber (20mm)</label>
+                        <input type="range" id="tread_thickness" min="10" max="40" step="2" value="20">
+                    </div>
+                    <div class="control-group">
+                        <label>Structural (50mm)</label>
+                        <input type="range" id="stringer_width" min="30" max="100" step="5" value="50">
+                    </div>
+                </div>
+
+                <button id="generate" class="primary-btn">Update Model</button>
+
+                <div id="export-controls" style="margin-top: 20px; display: none;">
+                    <h2>Export Assets</h2>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <button id="download-glb" style="padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 6px; font-size: 0.7rem;">3D GLB</button>
+                        <button id="download-dxf" style="padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 6px; font-size: 0.7rem;">CNC DXF</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Object Drawer -->
+        <div class="panel right-panel minimised" id="tree-panel">
+            <div class="panel-content">
+                <h2>Object Registry</h2>
+                <div id="tree-content"></div>
+                
+                <div id="selection-info" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <h2>Selection Details</h2>
+                    <div id="selection-details"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CNC Panel (Overlaying Model) -->
+        <div class="panel left-panel cnc-panel" id="cnc-panel">
+            <div class="panel-content">
+                <h2>Nesting Engine</h2>
+                <div class="control-group">
+                    <label>Sheet Dimensions (mm)</label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="number" id="sheet_width" value="2440">
+                        <input type="number" id="sheet_height" value="1220">
+                    </div>
+                </div>
+                
+                <div id="cnc-categories" style="margin: 15px 0;"></div>
+                
+                <button id="calculate-nesting" class="primary-btn">Calculate Nesting</button>
+                <canvas id="cnc-canvas"></canvas>
+                <div id="nesting-stats"></div>
+                <button id="download-cnc-dxf" class="primary-btn" style="background: var(--accent-warm); margin-top: 10px;" disabled>Export Nested DXF</button>
+            </div>
+        </div>
+
+        <div id="loading" class="loading-overlay">
+            <div class="spinner"></div>
+            <div style="margin-top: 15px; font-weight: 700; color: var(--accent);">GENERATING GEOMETRY...</div>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+        let scene, camera, renderer, controls, model;
+        let manifest = null;
+        let currentGlbBlob = null;
+        const meshMap = new Map();
+        const selection = new Set();
+        const loader = new GLTFLoader();
+
+        init();
+        animate();
+        setupUI();
+        generateModel();
+
+        function setupUI() {
+            // Drawer Toggles
+            const leftPanel = document.getElementById('controls-panel');
+            const rightPanel = document.getElementById('tree-panel');
+            const cncPanel = document.getElementById('cnc-panel');
+            
+            document.getElementById('toggle-left').onclick = () => {
+                leftPanel.classList.toggle('minimised');
+                cncPanel.classList.add('minimised');
+            };
+            
+            document.getElementById('toggle-right').onclick = () => {
+                rightPanel.classList.toggle('minimised');
+            };
+
+            // View Switcher
+            const btn3d = document.getElementById('view-3d');
+            const btnCnc = document.getElementById('view-cnc');
+
+            btn3d.onclick = () => {
+                btn3d.classList.add('active');
+                btnCnc.classList.remove('active');
+                cncPanel.style.display = 'none';
+                leftPanel.style.display = 'flex';
+                rightPanel.style.display = 'flex';
+            };
+
+            btnCnc.onclick = () => {
+                btnCnc.classList.add('active');
+                btn3d.classList.remove('active');
+                cncPanel.style.display = 'flex';
+                leftPanel.style.display = 'none';
+                rightPanel.style.display = 'none';
+                populateCncCategories();
+            };
+
+            // Slider listeners
+            document.querySelectorAll('input[type="range"]').forEach(el => {
+                el.oninput = () => {
+                    const display = document.getElementById(el.id + '-val');
+                    if (display) display.textContent = el.value;
+                };
+            });
+
+            document.getElementById('generate').onclick = () => {
+                // Auto-close drawer on mobile to show model
+                if (window.innerWidth < 768) leftPanel.classList.add('minimised');
+                generateModel();
+            };
+
+            document.getElementById('calculate-nesting').onclick = runNesting;
+        }
+
+        function getConfig() {
+            return {
+                model_type: document.getElementById('model_type').value,
+                width: parseFloat(document.getElementById('width').value),
+                rise: parseFloat(document.getElementById('rise').value),
+                going: parseFloat(document.getElementById('going').value),
+                inner_r: parseFloat(document.getElementById('inner_r').value),
+                s_bottom_steps: parseInt(document.getElementById('s_bottom_steps').value),
+                winder_steps: parseInt(document.getElementById('winder_steps').value),
+                s_top_steps: parseInt(document.getElementById('s_top_steps').value),
+                nosing: parseFloat(document.getElementById('nosing').value),
+                tread_thickness: parseFloat(document.getElementById('tread_thickness').value),
+                stringer_width: parseFloat(document.getElementById('stringer_width').value),
+                unified_soffit: true,
+                extend_top_flight: 300,
+                waist: 200
+            };
+        }
+
+        async function generateModel() {
+            const loading = document.getElementById('loading');
+            loading.style.display = 'flex';
+            
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(getConfig())
+                });
+                
+                const data = await response.json();
+                manifest = data.manifest;
+                
+                const binaryString = atob(data.glb);
+                const len = binaryString.length;
+                const glbBytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) {
+                    glbBytes[i] = binaryString.charCodeAt(i);
+                }
+                const url = URL.createObjectURL(new Blob([glbBytes], { type: 'model/gltf-binary' }));
+                
+                loader.load(url, (gltf) => {
+                    if (model) scene.remove(model);
+                    model = gltf.scene;
+                    
+                    meshMap.clear();
+                    model.traverse(child => {
+                        if (child.isMesh) {
+                            let idx = -1;
+                            let curr = child;
+                            while(curr) {
+                                if (curr.name.startsWith("part_")) {
+                                    idx = parseInt(curr.name.split("_")[1]);
+                                    break;
+                                }
+                                curr = curr.parent;
+                            }
+                            if (idx >= 0) {
+                                if (!meshMap.has(idx)) meshMap.set(idx, []);
+                                meshMap.get(idx).push(child);
+                            }
+                            child.userData.originalMaterial = child.material;
+                        }
+                    });
+                    
+                    scene.add(model);
+                    
+                    // Auto-center and fit camera to model
+                    const box = new THREE.Box3().setFromObject(model);
+                    const center = box.getCenter(new THREE.Vector3());
+                    const size = box.getSize(new THREE.Vector3());
+                    
+                    // Move model to center origin
+                    model.position.x += (model.position.x - center.x);
+                    model.position.y += (model.position.y - center.y);
+                    model.position.z += (model.position.z - center.z);
+                    
+                    // Update camera position to fit the model
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const fov = camera.fov * (Math.PI / 180);
+                    let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+                    cameraZ *= 1.5; // zoom out a little
+                    
+                    camera.position.set(cameraZ, cameraZ, cameraZ);
+                    camera.lookAt(0, 0, 0);
+                    controls.target.set(0, 0, 0);
+                    controls.update();
+
+                    document.getElementById('export-controls').style.display = 'block';
+                    renderObjectTree();
+                    loading.style.display = 'none';
+                });
+            } catch (err) {
+                alert("Generation Error: " + err.message);
+                loading.style.display = 'none';
+            }
+        }
+
+        function renderObjectTree() {
+            const container = document.getElementById('tree-content');
+            container.innerHTML = '';
+            if (!manifest || !manifest.categories) return;
+
+            manifest.categories.forEach(cat => {
+                const node = document.createElement('div');
+                node.innerHTML = `<div class="category-summary"><strong>${cat.name}</strong> (${cat.parts.length})</div>`;
+                const list = document.createElement('div');
+                list.className = 'parts-list';
+                
+                cat.parts.forEach(p => {
+                    const pnode = document.createElement('div');
+                    pnode.className = 'part-node';
+                    pnode.textContent = p.name;
+                    pnode.onclick = () => selectPart(p.mesh_index);
+                    list.appendChild(pnode);
+                });
+                node.appendChild(list);
+                container.appendChild(node);
+            });
+        }
+
+        function selectPart(idx) {
+            meshMap.forEach((meshes, mIdx) => {
+                meshes.forEach(m => {
+                    m.material = (mIdx === idx) ? 
+                        new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x38bdf8, emissiveIntensity: 0.5 }) : 
+                        m.userData.originalMaterial;
+                });
+            });
+        }
+
+        function populateCncCategories() {
+            const container = document.getElementById('cnc-categories');
+            if (!manifest) return;
+            container.innerHTML = '<h2>Sheet Content</h2>';
+            manifest.categories.forEach(cat => {
+                container.innerHTML += `
+                    <div style="display:flex; gap:10px; margin-bottom:5px;">
+                        <input type="checkbox" value="${cat.name}" checked> ${cat.name}
+                    </div>
+                `;
+            });
+        }
+
+        async function runNesting() {
+            const cats = Array.from(document.querySelectorAll('#cnc-categories input:checked')).map(i => i.value);
+            const res = await fetch('/cnc/nest', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    config: getConfig(),
+                    categories: cats,
+                    sheet_width: parseFloat(document.getElementById('sheet_width').value),
+                    sheet_height: parseFloat(document.getElementById('sheet_height').value)
+                })
+            });
+            const data = await res.json();
+            drawNesting(data);
+        }
+
+        function drawNesting(result) {
+            const canvas = document.getElementById('cnc-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set internal resolution based on content
+            const numSheets = result.sheet_count || 1;
+            const sheetW = 2440;
+            const sheetH = 1220;
+            
+            canvas.width = canvas.offsetWidth * 2;
+            const scale = canvas.width / (sheetW + 100);
+            canvas.height = (sheetH * scale + 100) * numSheets;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            Object.entries(result.sheets).forEach(([idx, parts]) => {
+                const yOff = idx * (sheetH * scale + 80) + 60;
+                
+                // Draw Sheet Border
+                ctx.strokeStyle = '#38bdf8';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(20, yOff, sheetW * scale, sheetH * scale);
+                ctx.fillStyle = 'rgba(255,255,255,0.02)';
+                ctx.fillRect(20, yOff, sheetW * scale, sheetH * scale);
+                
+                ctx.fillStyle = '#38bdf8';
+                ctx.font = 'bold 24px Inter';
+                ctx.fillText(`SHEET ${parseInt(idx)+1} - ${result.efficiency}% EFFICIENCY`, 20, yOff - 15);
+                
+                parts.forEach(p => {
+                    if (!p.points) return;
+                    
+                    ctx.beginPath();
+                    p.points.forEach((pt, i) => {
+                        let px = pt[0], py = pt[1];
+                        // Handle rotation in preview
+                        if (p.is_rotated) {
+                            const tmp = px; px = py; py = tmp;
+                        }
+                        const drawX = 20 + (p.x + px) * scale;
+                        const drawY = yOff + (p.y + py) * scale;
+                        
+                        if (i === 0) ctx.moveTo(drawX, drawY);
+                        else ctx.lineTo(drawX, drawY);
+                    });
+                    ctx.closePath();
+                    
+                    ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
+                    ctx.fill();
+                    ctx.strokeStyle = '#38bdf8';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    
+                    // Small Label
+                    ctx.fillStyle = 'white';
+                    ctx.font = '12px Inter';
+                    ctx.fillText(p.name, 20 + p.x * scale + 5, yOff + p.y * scale + 15);
+                });
+            });
+            
+            document.getElementById('nesting-stats').innerHTML = `
+                <div style="padding: 10px; background: rgba(56,189,248,0.1); border-radius: 8px;">
+                    <strong>ALGO:</strong> ${result.algo.split('.').pop()} | 
+                    <strong>SHEETS:</strong> ${result.sheet_count}
+                </div>
+            `;
+            
+            const dxfBtn = document.getElementById('download-cnc-dxf');
+            dxfBtn.disabled = false;
+        }
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0f172a);
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 100000);
+            camera.position.set(3000, 3000, 3000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.getElementById('viewport').appendChild(renderer.domElement);
+            controls = new OrbitControls(camera, renderer.domElement);
+            
+            const light = new THREE.DirectionalLight(0xffffff, 2);
+            light.position.set(1, 1, 1);
+            scene.add(light);
+            scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+            scene.add(new THREE.GridHelper(5000, 10, 0x334155, 0x1e293b));
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>
