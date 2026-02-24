@@ -40,16 +40,17 @@ CATEGORY_STYLE = {
 
 class StaircaseConfig(BaseModel):
     model_type: str = "volumetric"
-    width: float
-    rise: float
-    going: float
-    waist: float
-    inner_r: float
-    s_bottom_steps: int
-    winder_steps: int
-    s_top_steps: int
-    extend_top_flight: float
-    unified_soffit: bool
+    width: float = 800.0
+    rise: float = 220.0
+    going: float = 250.0
+    waist: float = 200.0
+    inner_r: float = 100.0
+    s_bottom_steps: int = 3
+    winder_steps: int = 3
+    s_top_steps: int = 8
+    extend_top_flight: float = 300.0
+    unified_soffit: bool = True
+    nosing: Optional[float] = 20.0
     tread_thickness: Optional[float] = None
     riser_thickness: Optional[float] = None
     stringer_width: Optional[float] = None
@@ -578,4 +579,4 @@ async def export_dxf_file(config: StaircaseConfig):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8005)
