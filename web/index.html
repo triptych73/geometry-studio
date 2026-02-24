@@ -411,6 +411,88 @@
         setupUI();
         generateModel();
 
+        
+        // --- NEW FEATURES ---
+        let originalPositions = new Map();
+
+        function updateExplodedView() {
+            const val = parseInt(document.getElementById('exploded_view').value);
+            document.getElementById('exploded_val').innerText = val + '%';
+            
+            if (!model) return;
+            
+            // Store original positions on first slide
+            if (originalPositions.size === 0) {
+                model.traverse(child => {
+                    if (child.isMesh && child.name.startsWith("part_")) {
+                        originalPositions.set(child.uuid, child.position.clone());
+                    }
+                });
+            }
+            
+            // Move parts away from center based on slider (0-200%)
+            const center = new THREE.Vector3(0,0,0); // Assuming model is centered
+            const scale = 1 + (val / 50.0); // max 4x expansion
+            
+            model.traverse(child => {
+                if (child.isMesh && child.name.startsWith("part_")) {
+                    const orig = originalPositions.get(child.uuid);
+                    if (orig) {
+                        child.position.copy(orig).multiplyScalar(scale);
+                    }
+                }
+            });
+        }
+
+        function savePreset() {
+            const config = getConfig();
+            localStorage.setItem('staircase_preset', JSON.stringify(config));
+            alert("Preset saved locally! 💾");
+        }
+
+        function loadPreset() {
+            const saved = localStorage.getItem('staircase_preset');
+            if (!saved) {
+                alert("No preset found!");
+                return;
+            }
+            try {
+                const config = JSON.parse(saved);
+                document.getElementById('model_type').value = config.model_type || 'structural';
+                document.getElementById('width').value = config.width;
+                document.getElementById('width_val').innerText = config.width;
+                document.getElementById('rise').value = config.rise;
+                document.getElementById('rise_val').innerText = config.rise;
+                document.getElementById('going').value = config.going;
+                document.getElementById('going_val').innerText = config.going;
+                document.getElementById('inner_r').value = config.inner_r;
+                document.getElementById('inner_r_val').innerText = config.inner_r;
+                document.getElementById('s_bottom_steps').value = config.s_bottom_steps;
+                document.getElementById('s_bottom_steps_val').innerText = config.s_bottom_steps;
+                document.getElementById('winder_steps').value = config.winder_steps;
+                document.getElementById('winder_steps_val').innerText = config.winder_steps;
+                document.getElementById('s_top_steps').value = config.s_top_steps;
+                document.getElementById('s_top_steps_val').innerText = config.s_top_steps;
+                
+                // Clear exploded view
+                document.getElementById('exploded_view').value = 0;
+                document.getElementById('exploded_val').innerText = '0%';
+                if (model) {
+                    model.traverse(child => {
+                        if (child.isMesh && child.name.startsWith("part_")) {
+                            const orig = originalPositions.get(child.uuid);
+                            if (orig) child.position.copy(orig);
+                        }
+                    });
+                }
+                
+                generateModel();
+            } catch (e) {
+                console.error("Failed to load preset", e);
+            }
+        }
+        // --- END NEW FEATURES ---
+
         function setupUI() {
             // Drawer Toggles
             const leftPanel = document.getElementById('controls-panel');
