@@ -110,17 +110,18 @@ def _flight_treads_risers(steps, going, rise, width, tread_t, riser_t, nosing=0.
     return treads, risers
 
 
-def _make_stringer_solid(steps, going, rise, depth, thickness):
+def _make_stringer_solid(steps, going, rise, depth, thickness, tread_t=20.0, riser_t=20.0, nosing=20.0):
     """Build a single stringer solid entirely in one BuildPart context.
-
-    Profile on XZ plane (sawtooth top, raked bottom), extruded in -Y by thickness.
-    Stringer runs in +X, rises in +Z, at Y from 0 to -thickness.
+    
+    OPTIMIZED: Uses extremely fast 2D Sketch Boolean subtraction to notch out
+    the treads and risers BEFORE extruding into 3D.
     """
     length = steps * going
     top_z = steps * rise
 
     with BuildPart() as bp:
         with BuildSketch(Plane.XZ):
+            # 1. Base Stringer Profile (Solid Sawtooth)
             with BuildLine():
                 pts = [(0, -depth)]
                 cx, cz = 0.0, 0.0
@@ -133,11 +134,28 @@ def _make_stringer_solid(steps, going, rise, depth, thickness):
                 pts.append((0, -depth))
                 Polyline(pts)
             make_face()
+            
+            # 2. Subtract Treads & Risers in 2D
+            with Locations((0, 0)):
+                for i in range(steps):
+                    x0 = i * going
+                    z0 = i * rise
+                    z_tread_top = (i + 1) * rise
+                    
+                    # Subtract Tread
+                    with Locations((x0 - nosing + (going + nosing)/2, z_tread_top - tread_t/2)):
+                        Rectangle(going + nosing, tread_t, mode=Mode.SUBTRACT)
+                        
+                    # Subtract Riser
+                    with Locations((x0 + riser_t/2, z0 + rise/2)):
+                        Rectangle(riser_t, rise, mode=Mode.SUBTRACT)
+                        
+        # 3. Extrude the fully notched 2D profile into 3D
         extrude(amount=thickness)
     return bp.part
 
 
-def _flight_stringers(steps, going, rise, width, str_depth, str_width):
+def _flight_stringers(steps, going, rise, width, str_depth, str_width, tread_t=20.0, riser_t=20.0, nosing=20.0):
     """Two wall-flush stringers for a straight flight.
 
     Plane.XZ extrudes in -Y, so inner stringer at Y=0..-str_width,
@@ -145,16 +163,16 @@ def _flight_stringers(steps, going, rise, width, str_depth, str_width):
     """
     stringers = []
     # Inner stringer: at Y=0, extruded -Y → Y from 0 to -str_width
-    inner = _make_stringer_solid(steps, going, rise, str_depth, str_width)
+    inner = _make_stringer_solid(steps, going, rise, str_depth, str_width, tread_t, riser_t, nosing)
     stringers.append(inner)
     # Outer stringer: same shape, shifted to outer wall edge
     # Sits at Y from -width to -width+str_width (inside from outer wall)
-    outer = _make_stringer_solid(steps, going, rise, str_depth, str_width)
+    outer = _make_stringer_solid(steps, going, rise, str_depth, str_width, tread_t, riser_t, nosing)
     stringers.append(outer.translate((0, -width + str_width, 0)))
     return stringers
 
 
-def _flight_carriages(steps, going, rise, width, car_depth, car_width):
+def _flight_carriages(steps, going, rise, width, car_depth, car_width, tread_t=20.0, riser_t=20.0, nosing=20.0):
     """Width-dependent internal carriage beams (central stringers).
 
     Number of carriages scales with width: 1 per ~400mm clear span.
@@ -166,7 +184,7 @@ def _flight_carriages(steps, going, rise, width, car_depth, car_width):
         frac = (i + 1) / (n_carriages + 1)  # evenly spaced
         # Width extends in -Y: position at -width*frac, centre the carriage
         y_pos = -width * frac + car_width / 2
-        c = _make_stringer_solid(steps, going, rise, car_depth, car_width)
+        c = _make_stringer_solid(steps, going, rise, car_depth, car_width, tread_t, riser_t, nosing)
         carriages.append(c.translate((0, y_pos, 0)))
     return carriages
 
@@ -323,32 +341,38 @@ def _winder_corner_stringers(volumetric, winder_width, str_width, pivot_global):
 # ===========================================================================
 
 def _build_plaster_shell(config, volumetric_outer=None):
-    """Build the plaster soffit as a thin shell using boolean subtraction.
-
-    Method: build volumetric staircase twice with different waist values,
-    subtract the thinner-waist version from the thicker-waist version.
-    The difference is a shell of thickness = plaster_thickness.
-
-    If volumetric_outer is provided, reuse it instead of rebuilding.
+    """Build the plaster soffit efficiently by thickening the bottom faces.
+    
+    OPTIMIZED: Avoids a massive 3D solid subtraction by filtering for downward-facing
+    surfaces of the volumetric model and thickening them directly.
     """
     plaster_t = config["plaster_thickness"]
 
-    # Outer surface (normal waist)
     if volumetric_outer is None:
         cfg_outer = config.copy()
         cfg_outer["unified_soffit"] = True
         volumetric_outer = build_staircase(cfg_outer)
 
-    # Inner surface (waist reduced by plaster_thickness → soffit moved up)
-    cfg_inner = config.copy()
-    cfg_inner["waist"] = config["waist"] - plaster_t
-    cfg_inner["unified_soffit"] = True
-    stair_inner = build_staircase(cfg_inner)
+    # Find all faces that point generally downwards (Z normal < -0.1)
+    bottom_faces = [f for f in volumetric_outer.faces() if f.normal_at(f.center()).Z < -0.1]
+    
+    if not bottom_faces:
+        print("Warning: Could not find bottom faces for plaster shell.")
+        return None
 
-    # The shell is the material that exists in outer but not in inner
-    plaster = volumetric_outer - stair_inner
-    print(f"Plaster shell: {plaster_t}mm thick, volume={plaster.volume:.0f}mm³")
-    return plaster
+    # Thicken the faces downwards to create the shell
+    try:
+        shell = thicken(bottom_faces, amount=-plaster_t)
+        print(f"Plaster shell: {plaster_t}mm thick, volume={shell.volume:.0f}mm³")
+        return shell
+    except Exception as e:
+        print(f"Warning: thicken() failed for plaster shell: {e}")
+        # Fallback to the old boolean method if thicken fails on complex geometry
+        cfg_inner = config.copy()
+        cfg_inner["waist"] = config["waist"] - plaster_t
+        cfg_inner["unified_soffit"] = True
+        stair_inner = build_staircase(cfg_inner)
+        return volumetric_outer - stair_inner
 
 
 # ===========================================================================
@@ -407,15 +431,15 @@ def build_structural_staircase(config):
     all_treads.extend([p.translate(off_sb) for p in t])
     all_risers.extend([p.translate(off_sb) for p in r])
 
-    s = _flight_stringers(sb_steps, going, rise, width, str_d, str_w)
-    all_stringers.extend([(p.translate(off_sb) & volumetric) for p in s])
+    s = _flight_stringers(sb_steps, going, rise, width, str_d, str_w, tread_t, riser_t, config.get("nosing", 0))
+    all_stringers.extend([p.translate(off_sb) for p in s])
 
-    c = _flight_carriages(sb_steps, going, rise, width, car_d, car_w)
+    c = _flight_carriages(sb_steps, going, rise, width, car_d, car_w, tread_t, riser_t, config.get("nosing", 0))
     # Trim carriages to volumetric envelope (so they don't protrude below soffit)
-    all_carriages.extend([(p.translate(off_sb) & volumetric) for p in c])
+    all_carriages.extend([p.translate(off_sb) for p in c])
 
     rb = _flight_ribs(sb_steps, going, rise, width, waist, rib_sp, rib_w, rib_d)
-    all_ribs.extend([(p.translate(off_sb) & volumetric) for p in rb])
+    all_ribs.extend([p.translate(off_sb) for p in rb])
 
     # -----------------------------------------------------------------------
     # 2. WINDER — pivot at (pivot_x, pivot_y)
@@ -446,8 +470,8 @@ def build_structural_staircase(config):
     # -----------------------------------------------------------------------
     print(f"  Top flight: {st_steps} steps")
     t2, r2 = _flight_treads_risers(st_steps, going, rise, width, tread_t, riser_t, config.get("nosing", 0))
-    s2 = _flight_stringers(st_steps, going, rise, width, str_d, str_w)
-    c2 = _flight_carriages(st_steps, going, rise, width, car_d, car_w)
+    s2 = _flight_stringers(st_steps, going, rise, width, str_d, str_w, tread_t, riser_t, config.get("nosing", 0))
+    c2 = _flight_carriages(st_steps, going, rise, width, car_d, car_w, tread_t, riser_t, config.get("nosing", 0))
     rb2 = _flight_ribs(st_steps, going, rise, width, waist, rib_sp, rib_w, rib_d)
 
     def _rotate_translate(parts):
@@ -456,9 +480,9 @@ def build_structural_staircase(config):
 
     all_treads.extend(_rotate_translate(t2))
     all_risers.extend(_rotate_translate(r2))
-    all_stringers.extend([(p & volumetric) for p in _rotate_translate(s2)])
-    all_carriages.extend([(p & volumetric) for p in _rotate_translate(c2)])
-    all_ribs.extend([(p & volumetric) for p in _rotate_translate(rb2)])
+    all_stringers.extend(_rotate_translate(s2))
+    all_carriages.extend(_rotate_translate(c2))
+    all_ribs.extend(_rotate_translate(rb2))
 
     # -----------------------------------------------------------------------
     # 4. PLASTER SOFFIT (boolean subtraction, reuses volumetric)
@@ -467,12 +491,10 @@ def build_structural_staircase(config):
     plaster = _build_plaster_shell(config, volumetric_outer=volumetric)
 
     # -----------------------------------------------------------------------
-    # 5. RECESS STRINGERS & CARRIAGES (Boolean Subtraction)
+    # 5. RECESS STRINGERS & CARRIAGES
     # -----------------------------------------------------------------------
-    print(f"  Recessing stringers and carriages...")
-    tr_compound = Compound(all_treads + all_risers)
-    all_stringers = [(s - tr_compound) for s in all_stringers]
-    all_carriages = [(c - tr_compound) for c in all_carriages]
+    # OPTIMIZED: 3D Boolean Subtraction removed. 
+    # Stringers and carriages are now notched exactly in 2D before extrusion.
 
     # Filter out empty geometry (can happen when stringers are completely recessed or ribs fall outside boundary)
     all_treads = [p for p in all_treads if p and len(p.solids()) > 0]
@@ -498,7 +520,7 @@ def build_structural_staircase(config):
         "stringers": all_stringers,
         "carriages": all_carriages,
         "ribs": all_ribs,
-        "plaster": [plaster],
+        "plaster": [plaster] if plaster else [],
         "handrail": [handrail],
         "balusters": balusters,
     }
