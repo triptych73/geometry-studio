@@ -433,9 +433,14 @@ async def export_bom_csv(config: StaircaseConfig):
             }
             
             for i, p in enumerate(parts):
+                bbox = p.bounding_box()
+                dims = sorted([bbox.size.X, bbox.size.Y, bbox.size.Z], reverse=True)
                 cat_manifest["parts"].append({
                     "name": f"{cat_name}_{i+1}",
                     "volume_mm3": p.volume,
+                    "length": dims[0],
+                    "width": dims[1],
+                    "thickness": dims[2]
                 })
                 mesh_index += 1
             
