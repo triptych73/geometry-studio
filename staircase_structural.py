@@ -156,6 +156,7 @@ def _make_stringer_solid(steps, going, rise, depth, thickness, tread_t=20.0, ris
 
 
 def _flight_stringers(steps, going, rise, width, str_depth, str_width, tread_t=20.0, riser_t=20.0, nosing=20.0):
+    if steps <= 0: return []
     """Two wall-flush stringers for a straight flight.
 
     Plane.XZ extrudes in -Y, so inner stringer at Y=0..-str_width,
@@ -173,6 +174,7 @@ def _flight_stringers(steps, going, rise, width, str_depth, str_width, tread_t=2
 
 
 def _flight_carriages(steps, going, rise, width, car_depth, car_width, tread_t=20.0, riser_t=20.0, nosing=20.0):
+    if steps <= 0: return []
     """Width-dependent internal carriage beams (central stringers).
 
     Number of carriages scales with width: 1 per ~400mm clear span.
@@ -215,6 +217,7 @@ def _winder_treads_risers(num_steps, rise, winder_width, inner_r,
     """Winder treads & risers with RECTANGULAR outer boundary.
     Includes 'nosing' overhang for architectural finish.
     """
+    if num_steps <= 0: return [], []
     px, py = pivot_global
     treads, risers = [], []
     angle_per = 90.0 / num_steps
@@ -363,6 +366,7 @@ def _build_plaster_shell(config, volumetric_outer=None):
     surfaces of the volumetric model and thickening them directly.
     """
     plaster_t = config["plaster_thickness"]
+    if plaster_t <= 0: return None
 
     if volumetric_outer is None:
         cfg_outer = config.copy()

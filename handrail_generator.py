@@ -33,8 +33,8 @@ def get_stair_nosing_points(config):
         
     # 2. Winder (Radial Pivot at sb_length, 0)
     pivot_x = sb_steps * going
-    angle_per = 90.0 / w_steps
-    for i in range(1, w_steps + 1):
+    angle_per = 90.0 / w_steps if w_steps > 0 else 0
+    for i in range(1, w_steps + 1) if w_steps > 0 else []:
         angle_rad = math.radians(-90 + i * angle_per)
         x = pivot_x + inner_r * math.cos(angle_rad)
         y = inner_r * math.sin(angle_rad)

@@ -5,7 +5,8 @@ from build123d import *
 
 
 def make_flight(steps: int, going: float, rise: float, width: float, waist: float,
-                extend_bottom_amount: float = 0.0, cut_soffit: bool = True) -> Part:
+                extend_bottom_amount: float = 0.0, cut_soffit: bool = True):
+    if steps <= 0: return None
     """Build a straight flight of stairs at the origin.
     
     Goes in +X, rises in +Z, width in -Y (Y: -width..0).
@@ -59,7 +60,8 @@ def make_flight(steps: int, going: float, rise: float, width: float, waist: floa
 
 
 def make_winder(width: float, rise: float, num_steps: int = 2, inner_r: float = 100.0,
-                waist: float = 200.0, base_height: float = 0.0, cut_soffit: bool = True) -> Part:
+                waist: float = 200.0, base_height: float = 0.0, cut_soffit: bool = True):
+    if num_steps <= 0: return None
     """Build a 90-degree winder at the origin.
     
     Args:

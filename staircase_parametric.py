@@ -61,24 +61,31 @@ def build_staircase(config):
     # When unified=True: raw blocks are fused, then a single smooth RuledSurface soffit is subtracted
     do_cut = not unified
     
-    # 1. S_Bottom: +X direction, inner edge at Y=-inner_r
+    # 1. S_Bottom
     sb = make_flight(steps=sb_steps, going=going, rise=rise, width=width, waist=waist, cut_soffit=do_cut)
-    sb = sb.translate((0, -inner_r, 0))
+    if sb is not None:
+        sb = sb.translate((0, -inner_r, 0))
     
-    # 2. Winder: pivot at global (pivot_x, pivot_y)
+    # 2. Winder
     winder = make_winder(width=winder_width, rise=rise, num_steps=w_steps,
                          inner_r=inner_r, waist=waist, base_height=winder_base_z, cut_soffit=do_cut)
-    winder = winder.translate((pivot_x, -winder_width, 0))
+    if winder is not None:
+        winder = winder.translate((pivot_x, -winder_width, 0))
     
-    # 3. S_Top: +Y direction after 90° rotation, inner edge at X=pivot_x+inner_r
+    # 3. S_Top
     st = make_flight(steps=st_steps, going=going, rise=rise, width=width, waist=waist,
                      extend_bottom_amount=ext_top, cut_soffit=do_cut)
-    st = st.rotate(Axis.Z, 90)
-    st = st.translate((pivot_x + inner_r, 0, st_base_z))
+    if st is not None:
+        st = st.rotate(Axis.Z, 90)
+        st = st.translate((pivot_x + inner_r, 0, st_base_z))
     
+    valid_parts = [p for p in [sb, winder, st] if p is not None]
+    if not valid_parts:
+        return None
+        
     if not unified:
         # Per-component soffit (old method) — may have kinks at junctions
-        stair = Compound([sb, winder, st])
+        stair = Compound(valid_parts)
         return stair
     
     # --- Unified Soffit (RuledSurface Spline Subtraction) ---
@@ -89,7 +96,9 @@ def build_staircase(config):
     #  - Square outer corner is preserved (not rounded)
     #  - Consistent waist thickness throughout
     
-    stair_solid = sb.fuse(winder).fuse(st)
+    stair_solid = valid_parts[0]
+    for p in valid_parts[1:]:
+        stair_solid = stair_solid.fuse(p)
     st_length = st_steps * going
     
     def get_soffit_path_pts(is_outer):
