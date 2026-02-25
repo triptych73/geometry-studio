@@ -20,6 +20,7 @@ from staircase_structural import (
     build_structural_staircase,
     DEFAULT_CONFIG as STRUCT_DEFAULTS,
     C_TREAD, C_RISER, C_STRINGER, C_CARRIAGE, C_RIB, C_PLASTER, C_HANDRAIL,
+    C_BALUSTER, C_WALKLINE,
 )
 from bom_export import generate_csv
 from cnc_nesting import extract_2d_profile, nest_parts_optimized, split_with_scarf_joint
@@ -27,15 +28,16 @@ from cnc_nesting import extract_2d_profile, nest_parts_optimized, split_with_sca
 app = FastAPI()
 
 # Category rendering info (matches display_structural in staircase_structural.py)
-CATEGORY_ORDER = ["treads", "risers", "plaster", "stringers", "carriages", "ribs", "handrail"]
+CATEGORY_ORDER = ["treads", "risers", "plaster", "stringers", "carriages", "handrail", "balusters", "walkline"]
 CATEGORY_STYLE = {
     "treads":    {"color": list(C_TREAD),    "opacity": 0.5},
     "risers":    {"color": list(C_RISER),    "opacity": 0.5},
     "plaster":   {"color": list(C_PLASTER),  "opacity": 0.5},
     "stringers": {"color": list(C_STRINGER), "opacity": 1.0},
     "carriages": {"color": list(C_CARRIAGE), "opacity": 1.0},
-    "ribs":      {"color": list(C_RIB),      "opacity": 1.0},
     "handrail":  {"color": list(C_HANDRAIL), "opacity": 1.0},
+    "balusters": {"color": list(C_BALUSTER), "opacity": 1.0},
+    "walkline":  {"color": list(C_WALKLINE), "opacity": 0.8},
 }
 
 
@@ -163,7 +165,7 @@ async def export_cnc_dxf(req: CncNestRequest):
         doc.layers.add("0_TEXT", color=1)
         msp = doc.modelspace()
         
-        for bin_idx, parts in result["sheets"].items():
+        for bin_idx, sheet_data in result["sheets"].items():
             y_offset = int(bin_idx) * (req.sheet_height + 100)
             
             # Sheet Border
@@ -173,7 +175,8 @@ async def export_cnc_dxf(req: CncNestRequest):
                 (0, y_offset + req.sheet_height), (0, y_offset)
             ], dxfattribs={'layer': 'SHEET_BORDER'})
             
-            for p in parts:
+            # The new format for sheet_data is {"efficiency": ..., "parts": [...]}
+            for p in sheet_data["parts"]:
                 pts = p["points"]
                 final_pts = []
                 for px, py in pts:
@@ -241,6 +244,11 @@ def _inject_materials_into_gltf(gltf_json, category_counts, part_face_counts):
     prim_idx = 0
     mat_idx = 0
     part_idx = 0
+    
+    total_faces = sum(part_face_counts)
+    print(f"[API] GLTF Primitives: {len(original_primitives)}, Expected Faces: {total_faces}")
+    if len(original_primitives) != total_faces:
+        print("[API] WARNING: Primitive count mismatch! Parts will be grouped incorrectly.")
     
     for cat_name, count in category_counts:
         for _ in range(count):
@@ -332,7 +340,7 @@ async def generate_staircase(config: StaircaseConfig):
         model_type = config_dict.pop("model_type", "volumetric")
 
         temp_dir = tempfile.gettempdir()
-        gltf_path = os.path.join(temp_dir, "staircase_output.glb")
+        gltf_path = os.path.join(temp_dir, "staircase_output.gltf")
 
         if model_type == "structural":
             for key, default_val in STRUCT_DEFAULTS.items():
@@ -352,10 +360,19 @@ async def generate_staircase(config: StaircaseConfig):
                 if not parts:
                     continue
                 
+                category_thicknesses = {
+                    "treads": config_dict.get("tread_thickness", 20.0),
+                    "risers": config_dict.get("riser_thickness", 20.0),
+                    "stringers": config_dict.get("stringer_width", 50.0),
+                    "carriages": config_dict.get("carriage_width", 50.0),
+                    "ribs": config_dict.get("rib_width", 18.0)
+                }
+                
                 cat_manifest = {
                     "name": cat_name,
                     "color": CATEGORY_STYLE[cat_name]["color"],
                     "opacity": CATEGORY_STYLE[cat_name]["opacity"],
+                    "thickness": category_thicknesses.get(cat_name, 0.0),
                     "parts": []
                 }
                 
@@ -480,20 +497,41 @@ async def export_autocad_bundle(config: StaircaseConfig):
                     continue
 
                 cat_compound = Compound(parts)
+                cat_compound.label = f"SS_{cat_name.upper()}"
+                
                 with tempfile.NamedTemporaryFile(suffix=".step", delete=False) as tmp:
                     tmp_path = tmp.name
 
                 try:
                     export_step(cat_compound, tmp_path)
+                    if os.path.getsize(tmp_path) < 100: # Very basic empty-file check
+                        print(f"[API] Warning: {cat_name}.step is suspiciously small.")
                     zip_file.write(tmp_path, f"{cat_name}.step")
                     manifest_parts.append(cat_name)
+                    print(f"[API] Packaged: {cat_name}.step")
                 finally:
                     if os.path.exists(tmp_path):
                         os.remove(tmp_path)
 
+            # Thickness metadata for CNC sheet matching
+            category_thicknesses = {
+                "treads": config_dict.get("tread_thickness", 20.0),
+                "risers": config_dict.get("riser_thickness", 20.0),
+                "stringers": config_dict.get("stringer_width", 50.0),
+                "carriages": config_dict.get("carriage_width", 50.0),
+                "ribs": config_dict.get("rib_width", 18.0)
+            }
+
             # 2. Generate Manifest JSON
+            manifest_details = []
+            for c in manifest_parts:
+                manifest_details.append({
+                    "name": c,
+                    "thickness": category_thicknesses.get(c, 0.0)
+                })
+
             manifest = {
-                "categories": manifest_parts,
+                "categories": manifest_details,
                 "config": config_dict
             }
             zip_file.writestr("manifest.json", json.dumps(manifest, indent=2))
@@ -501,43 +539,97 @@ async def export_autocad_bundle(config: StaircaseConfig):
             # 3. Generate AutoLISP Script
             ACAD_COLORS = {
                 "treads": "32", "risers": "34", "stringers": "42",
-                "carriages": "44", "ribs": "52", "plaster": "9"
+                "carriages": "44", "balusters": "52", "handrail": "40", "plaster": "9"
             }
 
             lisp_lines = [
                 ";; import_staircase.lsp - Auto-generated by Staircase Studio",
-                "(defun import-to-layer (filepath layername color / lastent ss)",
-                "  (setq lastent (entlast))",
-                "  (if (findfile filepath)",
-                "    (progn",
-                '      (command \"-LAYER\" \"M\" layername \"C\" color layername \"\")',
-                '      (command \"-IMPORT\" filepath \"\")',
-                "      (setq ss (ssadd))",
-                "      (if lastent",
-                "        (while (setq lastent (entnext lastent)) (ssadd lastent ss))",
-                '        (setq ss (ssget \"X\"))',
-                "      )",
-                '      (if ss (command \"-CHPROP\" ss \"\" \"LA\" layername \"C\" \"BYLAYER\" \"\"))',
-                "    )",
-                '    (princ (strcat \"\\nFile not found: \" filepath))',
+                "(defun import-sync (fpath layer color / startent ss count limit oldfd doc nextent ss2 i ent)",
+                '  (princ (strcat "\\n>> STARTING IMPORT: " fpath))',
+                '  (setq doc (vla-get-ActiveDocument (vlax-get-acad-object)))',
+                '  (setq startent (entlast))',
+                '  (setq oldfd (getvar "FILEDIA"))',
+                '  (setvar "FILEDIA" 0)',
+                '  ',
+                '  ;; Create layer via ActiveX to ensure it exists before import',
+                '  (vla-put-color (vla-add (vla-get-layers doc) layer) (atoi color))',
+                '  ',
+                '  ;; Use command version 2 for synchronous Import/Stepin',
+                '  (if (getcname "STEPIN")',
+                '    (progn (initcommandversion 2) (vl-cmdf "._STEPIN" fpath))',
+                '    (progn (initcommandversion 2) (vl-cmdf "._IMPORT" fpath))',
+                '  )',
+                '  ',
+                '  ;; Wait for database change (watchdog)',
+                '  (setq count 0 limit 5000)',
+                "  (while (and (equal startent (entlast)) (< count limit))",
+                "    (setq count (1+ count))",
+                "    (if (= 0 (rem count 1000)) (princ \".\"))",
                 "  )",
+                '  (setvar "FILEDIA" oldfd)',
+                '  ',
+                '  ;; Collect imported objects',
+                '  (setq ss (ssadd))',
+                '  (setq nextent (if startent (entnext startent) (entnext)))',
+                '  (while nextent',
+                '    (ssadd nextent ss)',
+                '    (setq nextent (entnext nextent))',
+                '  )',
+                '  ',
+                '  (if (> (sslength ss) 0)',
+                '    (progn',
+                '      ;; Explode Block References to break 3D link and release ByLayer properties',
+                '      (setq i 0)',
+                '      (while (< i (sslength ss))',
+                '        (setq ent (ssname ss i))',
+                '        (if (= "INSERT" (cdr (assoc 0 (entget ent))))',
+                '          (vl-cmdf "._EXPLODE" ent)',
+                '        )',
+                '        (setq i (1+ i))',
+                '      )',
+                '      ',
+                '      ;; Re-collect resulting baseline entities (e.g. 3D solids)',
+                '      (setq ss2 (ssadd))',
+                '      (setq nextent (if startent (entnext startent) (entnext)))',
+                '      (while nextent',
+                '        (ssadd nextent ss2)',
+                '        (vla-put-layer (vlax-ename->vla-object nextent) layer)',
+                '        (vla-put-color (vlax-ename->vla-object nextent) 256) ;; ByLayer',
+                '        (setq nextent (entnext nextent))',
+                '      )',
+                '      (princ (strcat "\\nSuccess: Layered " (itoa (sslength ss2)) " objects."))',
+                '    )',
+                '    (princ "\\nWarning: No geometry was imported for this category.")',
+                '  )',
                 ")",
                 "",
-                "(defun C:IMPORT-STAIRCASE (/ path)",
-                '  (setq path (getvar \"DWGPREFIX\"))',
-                '  (setvar \"CMDECHO\" 0)',
+                "(defun C:IMPORT-STAIRCASE (/ fpath folder)",
+                '  (vl-load-com)',
+                '  (setvar "CMDECHO" 0)',
+                '  (setq fpath (getfiled "Select any STEP file from the extracted staircase bundle" "" "step" 8))',
+                "  (if fpath",
+                "    (progn",
+                "      (setq folder (vl-filename-directory fpath))",
+                '      (setq folder (strcat folder "\\\\"))'
             ]
 
             for cat in manifest_parts:
                 lisp_lines.append(
-                    f'  (import-to-layer (strcat path \"{cat}.step\") \"SS-{cat.upper()}\" \"{ACAD_COLORS.get(cat, "7")}\")'  
+                    f'      (import-sync (strcat folder "{cat}.step") "SS-{cat.upper()}" "{ACAD_COLORS.get(cat, "7")}")'  
                 )
 
             lisp_lines.extend([
-                '  (setvar \"CMDECHO\" 1)',
-                '  (princ \"\\nStaircase import complete.\")',
+                '      (vla-regen (vla-get-ActiveDocument (vlax-get-acad-object)) acActiveViewport)',
+                '      (princ "\\n--- Staircase import complete ---")',
+                "    )",
+                '    (princ "\\nImport cancelled.")',
+                "  )",
+                '  (setvar "CMDECHO" 1)',
                 "  (princ)",
                 ")",
+                '(princ "\\n>> Staircase Studio LISP Loaded.")',
+                '(princ "\\n>> Type \\"IMPORT-STAIRCASE\\" to begin.")',
+                '(princ)'
             ])
             zip_file.writestr("import_staircase.lsp", "\n".join(lisp_lines))
 
@@ -624,9 +716,7 @@ async def export_dxf_file(config: StaircaseConfig):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
-    except Exception as e:
-        print(f"[API] DXF Export Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+
 
 
 if __name__ == "__main__":

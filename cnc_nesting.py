@@ -176,7 +176,8 @@ def nest_parts_optimized(part_data, sheet_width=2440, sheet_height=1220, spacing
     fittable = [p for p in part_data if (p["width"] <= sheet_width and p["height"] <= sheet_height) or (p["height"] <= sheet_width and p["width"] <= sheet_height)]
     
     for algo in algos:
-        packer = rectpack.newPacker(mode=rectpack.PackingMode.Offline, bin_algo=rectpack.PackingBin.BFF, pack_algo=algo, rotation=True)
+        # rectpack.PackingBin.BFF is Best First Fit, let's use PackingBin.Global to try packing bin by bin greedily
+        packer = rectpack.newPacker(mode=rectpack.PackingMode.Offline, bin_algo=rectpack.PackingBin.Global, pack_algo=algo, rotation=True)
         for _ in range(50): packer.add_bin(sheet_width, sheet_height)
         for p in fittable: packer.add_rect(p["width"] + spacing, p["height"] + spacing, rid=p["id"])
         packer.pack()
@@ -187,16 +188,18 @@ def nest_parts_optimized(part_data, sheet_width=2440, sheet_height=1220, spacing
         packed_ids = [r[5] for r in rects]
         packed_area = sum((p["width"] + spacing) * (p["height"] + spacing) for p in fittable if p["id"] in packed_ids)
         total_area = num_sheets * sheet_width * sheet_height
-        efficiency = packed_area / total_area if total_area > 0 else 0
+        global_efficiency = packed_area / total_area if total_area > 0 else 0
         
-        if (num_sheets > 0 and num_sheets < min_sheets) or (num_sheets == min_sheets and efficiency > max_efficiency):
+        if (num_sheets > 0 and num_sheets < min_sheets) or (num_sheets == min_sheets and global_efficiency > max_efficiency):
             min_sheets = num_sheets
-            max_efficiency = efficiency
-            sheets = {}
+            max_efficiency = global_efficiency
+            
+            # Group by bin
+            sheets_map = {}
             for bin_idx, x, y, w, h, rid in rects:
-                if bin_idx not in sheets: sheets[bin_idx] = []
+                if bin_idx not in sheets_map: sheets_map[bin_idx] = []
                 orig = next(p for p in fittable if p["id"] == rid)
-                sheets[bin_idx].append({
+                sheets_map[bin_idx].append({
                     "id": rid, "name": orig["name"], 
                     "x": x + spacing/2, "y": y + spacing/2, 
                     "width": w - spacing, "height": h - spacing, 
@@ -205,8 +208,26 @@ def nest_parts_optimized(part_data, sheet_width=2440, sheet_height=1220, spacing
                     "outer": orig.get("outer", orig["points"]),
                     "inner": orig.get("inner", [])
                 })
+            
+            # Format output specifically
+            formatted_sheets = {}
+            for bin_idx, parts in sheets_map.items():
+                sheet_packed_area = sum((p["width"] + spacing) * (p["height"] + spacing) for p in parts)
+                sheet_eff = (sheet_packed_area / (sheet_width * sheet_height)) * 100
+                formatted_sheets[str(bin_idx)] = {
+                    "efficiency": round(sheet_eff, 2),
+                    "parts": parts
+                }
+                
             best_result = {
-                "algo": str(algo), "efficiency": round(efficiency * 100, 2),
-                "sheet_count": num_sheets, "sheets": sheets
+                "algo": str(algo), "efficiency": round(global_efficiency * 100, 2),
+                "sheet_count": num_sheets, "sheets": formatted_sheets
             }
+            
+    if best_result is None:
+        return {
+            "algo": "None", "efficiency": 0,
+            "sheet_count": 0, "sheets": {}
+        }
+        
     return best_result

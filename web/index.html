@@ -111,19 +111,35 @@
             padding: 20px;
         }
 
-        .panel-content::-webkit-scrollbar { width: 4px; }
-        .panel-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+        .panel-content::-webkit-scrollbar {
+            width: 4px;
+        }
 
-        .left-panel { left: 15px; }
-        .right-panel { right: 15px; }
+        .panel-content::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+
+        .left-panel {
+            left: 15px;
+        }
+
+        .right-panel {
+            right: 15px;
+        }
 
         .panel.minimised {
             opacity: 0;
             pointer-events: none;
         }
 
-        .left-panel.minimised { transform: translateX(-100px); }
-        .right-panel.minimised { transform: translateX(100px); }
+        .left-panel.minimised {
+            transform: translateX(-100px);
+        }
+
+        .right-panel.minimised {
+            transform: translateX(100px);
+        }
 
         /* Floating Toggle Buttons */
         .drawer-toggle {
@@ -145,9 +161,17 @@
             transition: transform 0.2s;
         }
 
-        .drawer-toggle:active { transform: scale(0.9); }
-        #toggle-left { left: 20px; }
-        #toggle-right { right: 20px; }
+        .drawer-toggle:active {
+            transform: scale(0.9);
+        }
+
+        #toggle-left {
+            left: 20px;
+        }
+
+        #toggle-right {
+            right: 20px;
+        }
 
         /* UI Elements */
         h2 {
@@ -159,13 +183,31 @@
             color: var(--accent-warm);
         }
 
-        .control-group { margin-bottom: 16px; }
-        label { display: flex; font-size: 0.85rem; margin-bottom: 8px; justify-content: space-between; }
-        .value-display { color: var(--accent); font-weight: 700; }
+        .control-group {
+            margin-bottom: 16px;
+        }
 
-        input[type="range"] { width: 100%; height: 24px; accent-color: var(--accent); cursor: pointer; }
-        
-        select, input[type="number"] {
+        label {
+            display: flex;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            justify-content: space-between;
+        }
+
+        .value-display {
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 24px;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        select,
+        input[type="number"] {
             width: 100%;
             padding: 10px;
             background: rgba(255, 255, 255, 0.05);
@@ -190,11 +232,101 @@
         }
 
         /* CNC specific */
-        .cnc-panel { display: none; }
-        .cnc-panel.visible { display: flex; }
-        #cnc-canvas { background: #000; width: 100%; height: 300px; border-radius: 8px; margin: 15px 0; border: 1px solid rgba(255,255,255,0.1); }
+        .cnc-panel {
+            display: none;
+        }
+
+        .cnc-panel.visible {
+            display: flex;
+        }
+
+        #cnc-canvas {
+            background: #000;
+            width: 100%;
+            height: 300px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
 
         /* Loading */
+        .selection-panel {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 10px;
+            padding: 15px 25px;
+            color: white;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .selection-panel h3 {
+            margin: 0 0 8px 0;
+            color: var(--accent);
+        }
+
+        .selection-panel p {
+            margin: 4px 0;
+            font-size: 0.85rem;
+        }
+
+        .category-node {
+            margin-bottom: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .category-summary {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 8px;
+            background: rgba(255, 255, 255, 0.03);
+            font-size: 0.8rem;
+            cursor: default;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 2px 4px;
+            opacity: 0.5;
+        }
+
+        .icon-btn.active {
+            opacity: 1;
+        }
+
+        .parts-list {
+            padding-left: 16px;
+        }
+
+        .part-node {
+            padding: 3px 8px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+            border-radius: 4px;
+        }
+
+        .part-node:hover {
+            background: rgba(56, 189, 248, 0.1);
+            color: white;
+        }
+
+        .part-node.highlighted {
+            background: rgba(56, 189, 248, 0.2);
+            color: var(--accent);
+        }
+
         .loading-overlay {
             position: absolute;
             inset: 0;
@@ -206,27 +338,75 @@
             z-index: 2000;
         }
 
-        .spinner { width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
 
         /* Mobile Adjustments */
         @media (max-width: 768px) {
-            .panel { width: calc(100vw - 30px); }
-            .brand h1 { font-size: 0.9rem; }
-            header { padding: 0 10px; }
-            .view-btn { padding: 6px 8px; font-size: 0.75rem; }
+            .panel {
+                width: calc(100vw - 30px);
+            }
+
+            .brand h1 {
+                font-size: 0.9rem;
+            }
+
+            header {
+                padding: 0 10px;
+            }
+
+            .view-btn {
+                padding: 6px 8px;
+                font-size: 0.75rem;
+            }
         }
 
         /* Tree Styles */
-        .category-summary { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .parts-list { padding-left: 15px; margin: 8px 0; border-left: 2px solid var(--accent); }
-        .part-node { padding: 8px; border-radius: 6px; font-size: 0.85rem; display: flex; align-items: center; cursor: pointer; }
-        .part-node.selected { background: rgba(56, 189, 248, 0.2); color: var(--accent); }
-    
+        .category-summary {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .parts-list {
+            padding-left: 15px;
+            margin: 8px 0;
+            border-left: 2px solid var(--accent);
+        }
+
+        .part-node {
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .part-node.selected {
+            background: rgba(56, 189, 248, 0.2);
+            color: var(--accent);
+        }
+
         .selection-panel {
             position: absolute;
             bottom: 20px;
-            left: 300px; /* Offset past controls panel */
+            left: 300px;
+            /* Offset past controls panel */
             background: rgba(15, 23, 42, 0.9);
             border: 1px solid #334155;
             border-radius: 8px;
@@ -236,23 +416,49 @@
             backdrop-filter: blur(4px);
             z-index: 1000;
             font-family: monospace;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
-        .selection-panel h3 { margin: 0 0 10px 0; color: #38bdf8; font-size: 14px; }
-        .selection-panel p { margin: 5px 0; font-size: 12px; }
-        .highlighted { outline: 2px solid #38bdf8; background: #1e293b !important; }
-        .part-node.highlighted { background: rgba(56, 189, 248, 0.2); border-left: 3px solid #38bdf8; }
-        .part-item { cursor: pointer; transition: background 0.2s; }
-        .part-item:hover { background: #1e293b; }
-</style>
+
+        .selection-panel h3 {
+            margin: 0 0 10px 0;
+            color: #38bdf8;
+            font-size: 14px;
+        }
+
+        .selection-panel p {
+            margin: 5px 0;
+            font-size: 12px;
+        }
+
+        .highlighted {
+            outline: 2px solid #38bdf8;
+            background: #1e293b !important;
+        }
+
+        .part-node.highlighted {
+            background: rgba(56, 189, 248, 0.2);
+            border-left: 3px solid #38bdf8;
+        }
+
+        .part-item {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .part-item:hover {
+            background: #1e293b;
+        }
+    </style>
 </head>
 
 <body>
     <header>
         <div class="brand">
-            <h1>Staircase Studio <span id="mode-badge" style="font-size: 0.6rem; padding: 2px 6px; background: var(--accent-warm); color: black; border-radius: 4px; margin-left: 5px;">V3</span></h1>
+            <h1>Staircase Studio <span id="mode-badge"
+                    style="font-size: 0.6rem; padding: 2px 6px; background: var(--accent-warm); color: black; border-radius: 4px; margin-left: 5px;">V3</span>
+            </h1>
         </div>
-        
+
         <div class="view-switcher">
             <div class="view-btn active" id="view-3d">3D MODEL</div>
             <div class="view-btn" id="view-cnc">MANUFACTURING</div>
@@ -261,9 +467,14 @@
         <div style="width: 40px;"></div> <!-- Spacer -->
     </header>
 
-    <div id="viewport-container">
+    <div id="viewport-container" style="position: relative; width: 100%; height: calc(100vh - 50px); overflow: hidden;">
+
+        <!-- 3D View Cube Widget -->
+        <div id="view-cube"
+            style="position: absolute; top: 20px; right: 20px; width: 100px; height: 100px; z-index: 500; cursor: pointer; border-radius: 8px;">
+        </div>
         <div id="viewport"></div>
-        
+
         <button class="drawer-toggle" id="toggle-left" title="Settings">⚙️</button>
         <button class="drawer-toggle" id="toggle-right" title="Parts">📁</button>
 
@@ -295,6 +506,16 @@
                     <label>Inner Radius <span class="value-display" id="inner_r-val">100</span></label>
                     <input type="range" id="inner_r" min="0" max="500" step="25" value="100">
                 </div>
+                <div class="control-group">
+                    <label>Soffit/Waist <span class="value-display" id="waist-val">150</span></label>
+                    <input type="range" id="waist" min="100" max="300" step="5" value="150">
+                </div>
+                <div class="control-group"
+                    style="flex-direction: row; justify-content: space-between; align-items: center;">
+                    <label for="unified_soffit" style="margin-bottom: 0;">Unified Soffit (Helical Curve)</label>
+                    <input type="checkbox" id="unified_soffit" checked
+                        style="width: 20px; height: 20px; cursor: pointer;">
+                </div>
 
                 <h2>Flights</h2>
                 <div class="control-group">
@@ -317,19 +538,38 @@
                         <input type="range" id="nosing" min="0" max="40" step="2" value="20">
                     </div>
                     <div class="control-group">
-                        <label>Timber (20mm)</label>
+                        <label>Tread Thickness (mm) <span class="value-display"
+                                id="tread_thickness-val">20</span></label>
                         <input type="range" id="tread_thickness" min="10" max="40" step="2" value="20">
                     </div>
                     <div class="control-group">
-                        <label>Structural (50mm)</label>
+                        <label>Riser Thickness (mm) <span class="value-display"
+                                id="riser_thickness-val">20</span></label>
+                        <input type="range" id="riser_thickness" min="10" max="40" step="2" value="20">
+                    </div>
+                    <div class="control-group">
+                        <label>Stringer Width (mm) <span class="value-display" id="stringer_width-val">50</span></label>
                         <input type="range" id="stringer_width" min="30" max="100" step="5" value="50">
+                    </div>
+                    <div class="control-group">
+                        <label>Carriage Width (mm) <span class="value-display" id="carriage_width-val">50</span></label>
+                        <input type="range" id="carriage_width" min="30" max="100" step="5" value="50">
                     </div>
                 </div>
 
-                
+
+                <div class="control-group">
+                    <label>Explosion Origin</label>
+                    <select id="explode_origin"
+                        style="width: 100%; padding: 5px; background: rgba(15,23,42,0.8); color: white; border: 1px solid #334155; border-radius: 4px;">
+                        <option value="walkline">Walkline (Closest Segment)</option>
+                        <option value="center">Geometric Center</option>
+                        <option value="bottom">Bottom Start (Long Stringer)</option>
+                    </select>
+                </div>
                 <div class="control-group">
                     <label>Exploded View <span class="value-display" id="exploded_val">0%</span></label>
-                    <input type="range" id="exploded_view" class="slider" min="0" max="100" value="0" oninput="updateExplodedView()">
+                    <input type="range" id="exploded_view" class="slider" min="0" max="100" value="0">
                 </div>
 
                 <button id="generate" class="primary-btn">Update Model</button>
@@ -337,13 +577,21 @@
                 <div id="export-controls" style="margin-top: 20px; display: none;">
                     <h2>Export Assets</h2>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                        <button id="download-glb" style="padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 6px; font-size: 0.7rem;">3D GLB</button>
-                        
-            <button id="download-bom" class="generate-btn" style="background: #10b981; margin-top: 10px;" onclick="downloadBOM()">
-                Download Takeoff (CSV)
-            </button>
-            <button id="download-dxf" style="padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 6px; font-size: 0.7rem;">CNC DXF</button>
+                        <button id="download-glb"
+                            style="padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 6px; font-size: 0.7rem;">3D
+                            GLB</button>
+                        <button id="download-gltf"
+                            style="padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 6px; font-size: 0.7rem;">glTF</button>
+                        <button id="download-autocad"
+                            style="padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 6px; font-size: 0.7rem;">AutoCAD
+                            Bundle</button>
+                        <button id="download-dxf"
+                            style="padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 6px; font-size: 0.7rem;">CNC
+                            DXF</button>
                     </div>
+                    <button id="download-bom"
+                        style="width:100%; margin-top: 8px; padding: 10px; background: #10b981; border: none; color: white; border-radius: 6px; font-size: 0.7rem; cursor: pointer;">Download
+                        Takeoff (CSV)</button>
                 </div>
             </div>
         </div>
@@ -353,8 +601,9 @@
             <div class="panel-content">
                 <h2>Object Registry</h2>
                 <div id="tree-content"></div>
-                
-                <div id="selection-info" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+
+                <div id="selection-info"
+                    style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
                     <h2>Selection Details</h2>
                     <div id="selection-details"></div>
                 </div>
@@ -372,19 +621,26 @@
                         <input type="number" id="sheet_height" value="1220">
                     </div>
                 </div>
-                
+
                 <div id="cnc-categories" style="margin: 15px 0;"></div>
-                
+
                 <button id="calculate-nesting" class="primary-btn">Calculate Nesting</button>
                 <canvas id="cnc-canvas"></canvas>
                 <div id="nesting-stats"></div>
-                <button id="download-cnc-dxf" class="primary-btn" style="background: var(--accent-warm); margin-top: 10px;" disabled>Export Nested DXF</button>
+                <button id="download-cnc-dxf" class="primary-btn"
+                    style="background: var(--accent-warm); margin-top: 10px;" disabled>Export Nested DXF</button>
             </div>
         </div>
 
         <div id="loading" class="loading-overlay">
             <div class="spinner"></div>
             <div style="margin-top: 15px; font-weight: 700; color: var(--accent);">GENERATING GEOMETRY...</div>
+        </div>
+
+        <div id="selection-panel" class="selection-panel">
+            <h3 id="sel-title"></h3>
+            <p>Volume: <span id="sel-volume"></span> mm³ (<span id="sel-liters"></span> L)</p>
+            <p>Dimensions: <span id="sel-dims"></span> mm</p>
         </div>
     </div>
 
@@ -416,20 +672,24 @@
         const hoverColor = new THREE.Color(0x818cf8);
 
 
-        init();
-        animate();
-        setupUI();
-        generateModel();
+        let cubeScene, cubeCamera, cubeRenderer, viewCube;
+        const cubeRaycaster = new THREE.Raycaster();
+        const cubeMouse = new THREE.Vector2();
 
-        
-        
+        init();
+        initCube();
+        setupUI();
+        if (!loadPreset(true)) {
+            generateModel();
+        }
+
         // --- NEW FEATURES ---
-        
+
         async function downloadBOM() {
             try {
                 const response = await fetch('/bom');
                 if (!response.ok) throw new Error('BOM generation failed');
-                
+
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -447,97 +707,363 @@
         }
         window.downloadBOM = downloadBOM;
 
+        async function downloadExport(format) {
+            try {
+                let url, filename, method = 'POST', body = JSON.stringify(getConfig());
+                const headers = { 'Content-Type': 'application/json' };
+
+                switch (format) {
+                    case 'glb':
+                        // Re-use the already generated GLB from the last response
+                        if (window._lastGlbBase64) {
+                            const bin = atob(window._lastGlbBase64);
+                            const arr = new Uint8Array(bin.length);
+                            for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+                            const blob = new Blob([arr], { type: 'model/gltf-binary' });
+                            const a = document.createElement('a');
+                            a.href = URL.createObjectURL(blob);
+                            a.download = 'staircase.glb';
+                            a.click();
+                            URL.revokeObjectURL(a.href);
+                            return;
+                        }
+                        alert('Generate a model first.');
+                        return;
+                    case 'gltf':
+                        // Export as glTF (same as GLB but with .gltf)
+                        if (window._lastGlbBase64) {
+                            const bin = atob(window._lastGlbBase64);
+                            const arr = new Uint8Array(bin.length);
+                            for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+                            const blob = new Blob([arr], { type: 'model/gltf-binary' });
+                            const a = document.createElement('a');
+                            a.href = URL.createObjectURL(blob);
+                            a.download = 'staircase.gltf';
+                            a.click();
+                            URL.revokeObjectURL(a.href);
+                            return;
+                        }
+                        alert('Generate a model first.');
+                        return;
+                    case 'autocad':
+                        url = '/export/autocad';
+                        filename = 'staircase_autocad.zip';
+                        break;
+                    case 'dxf':
+                        url = '/export/dxf';
+                        filename = 'staircase.dxf';
+                        break;
+                    default:
+                        return;
+                }
+
+                const response = await fetch(url, { method, headers, body });
+                if (!response.ok) throw new Error(`Export failed: ${response.statusText}`);
+
+                const blob = await response.blob();
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                URL.revokeObjectURL(a.href);
+                document.body.removeChild(a);
+            } catch (error) {
+                console.error(`Export error (${format}):`, error);
+                alert(`Export failed: ${error.message}`);
+            }
+        }
+        window.downloadExport = downloadExport;
+
         let originalPositions = new Map();
+        let explosionDirections = new Map();
 
         function updateExplodedView() {
-            const expElem = document.getElementById('exploded_view'); if(!expElem) return; const val = parseInt(expElem.value);
+            const expElem = document.getElementById('exploded_view');
+            if (!expElem) return;
+            const val = parseInt(expElem.value);
             document.getElementById('exploded_val').innerText = val + '%';
-            
-            if (!model) return;
-            
-            // Store original positions on first slide
+
+            if (!model || meshMap.size === 0) return;
+
+            // Compute and cache directions on first slide
             if (originalPositions.size === 0) {
-                model.traverse(child => {
-                    if (child.isMesh && child.name.startsWith("part_")) {
-                        originalPositions.set(child.uuid, child.position.clone());
+                // Determine the overall bounding box to find the vertical center (Z axis in three.js if up is Z, or Y if up is Y)
+                const box = new THREE.Box3().setFromObject(model);
+                const isZUp = (box.max.z - box.min.z) > (box.max.y - box.min.y);
+
+                let overallCenter;
+                let walklinePoints = [];
+                const originType = document.getElementById('explode_origin')?.value || 'walkline';
+
+                if (originType === 'walkline') {
+                    // Extract vertices of the walkline to build a polyline path
+                    model.traverse(child => {
+                        if (child.isMesh) {
+                            // Find the logical parent part
+                            let catNode = child;
+                            while (catNode && !catNode.name.startsWith("walkline")) {
+                                if (catNode.name.startsWith("part_")) {
+                                    // Walk up to the category group
+                                    catNode = catNode.parent;
+                                } else {
+                                    catNode = catNode.parent;
+                                }
+                            }
+
+                            // If this mesh is part of the walkline category, grab its vertices
+                            // (We just need a dense sampling of points along the ribbon)
+                            if (catNode && catNode.name.startsWith("walkline") || child.material?.name === "walkline") {
+                                child.updateMatrixWorld(true);
+                                const pos = child.geometry.attributes.position;
+                                const idxArr = child.geometry.index;
+                                const v = new THREE.Vector3();
+
+                                if (idxArr) {
+                                    for (let i = 0; i < idxArr.count; i++) {
+                                        v.fromBufferAttribute(pos, idxArr.getX(i));
+                                        v.applyMatrix4(child.matrixWorld);
+                                        walklinePoints.push(v.clone());
+                                    }
+                                } else if (pos) {
+                                    // Fallback for unindexed geometry
+                                    for (let i = 0; i < pos.count; i++) {
+                                        v.fromBufferAttribute(pos, i);
+                                        v.applyMatrix4(child.matrixWorld);
+                                        walklinePoints.push(v.clone());
+                                    }
+                                }
+                            }
+                        }
+                    });
+                    if (walklinePoints.length === 0) {
+                        console.warn("Walkline not found in model, falling back to center.");
+                        overallCenter = box.getCenter(new THREE.Vector3());
                     }
+                } else if (originType === 'bottom') {
+                    // Use the bottom starting point (min coords) instead of center. 
+                    overallCenter = new THREE.Vector3(box.min.x, box.min.y, box.min.z);
+                } else {
+                    overallCenter = box.getCenter(new THREE.Vector3());
+                }
+
+                // Helper function: Find the absolute closest point on a point cloud / list of vertices
+                function getClosestWalklinePoint(target) {
+                    if (walklinePoints.length === 0) return overallCenter;
+                    let minDistSq = Infinity;
+                    let closest = walklinePoints[0];
+                    for (let i = 0; i < walklinePoints.length; i++) {
+                        const dSq = target.distanceToSquared(walklinePoints[i]);
+                        if (dSq < minDistSq) {
+                            minDistSq = dSq;
+                            closest = walklinePoints[i];
+                        }
+                    }
+                    return closest;
+                }
+
+                meshMap.forEach((meshes, idx) => {
+                    if (meshes.length === 0) return;
+
+                    // Do not explode the walkline itself—it must remain the stationary anchor
+                    if (meshes[0].material?.name === "walkline" || (meshes[0].parent && meshes[0].parent.name.startsWith("walkline"))) {
+                        return;
+                    }
+
+                    // 1. Compute a mathematically tight bounding box for the entire semantic part (e.g. Tread 1).
+                    // Because the GLTF uses a monolithic shared vertex buffer, we MUST manually check the index buffer
+                    // of every leaf mesh belonging to this part, otherwise Three.js evaluates the entire room.
+                    const partBox = new THREE.Box3();
+                    let isValid = false;
+
+                    meshes.forEach(m => {
+                        m.updateMatrixWorld(true);
+                        const pos = m.geometry.attributes.position;
+                        const idxArr = m.geometry.index;
+                        const v = new THREE.Vector3();
+
+                        if (idxArr) {
+                            for (let i = 0; i < idxArr.count; i++) {
+                                v.fromBufferAttribute(pos, idxArr.getX(i));
+                                v.applyMatrix4(m.matrixWorld);
+                                partBox.expandByPoint(v);
+                                isValid = true;
+                            }
+                        } else if (pos) {
+                            // Unindexed geometry fallback
+                            for (let i = 0; i < pos.count; i++) {
+                                v.fromBufferAttribute(pos, i);
+                                v.applyMatrix4(m.matrixWorld);
+                                partBox.expandByPoint(v);
+                                isValid = true;
+                            }
+                        }
+                    });
+
+                    if (!isValid) return; // Skip if no geometry found
+                    const partCenter = partBox.getCenter(new THREE.Vector3());
+
+                    // Determine the specific origin anchor for this exact part
+                    let anchorPoint = overallCenter;
+                    if (originType === 'walkline' && walklinePoints.length > 0) {
+                        anchorPoint = getClosestWalklinePoint(partCenter);
+                    }
+
+                    // 2. Compute Explosion Vector
+                    // Use a clean proportional geometric explosion based on distance from the anchor point.
+                    const pushDirStr = new THREE.Vector3();
+                    const dx = partCenter.x - anchorPoint.x;
+                    const dy = partCenter.y - anchorPoint.y;
+                    const dz = partCenter.z - anchorPoint.z;
+
+                    pushDirStr.set(dx, dy, dz);
+
+                    // If anchoring to a center/bottom point, apply vertical lifting
+                    // If anchoring to the walkline, NO vertical lifting is needed because the walkline already ascends 
+                    // alongside the parts naturally, so dz is already local to the step's height!
+                    if (originType !== 'walkline') {
+                        if (isZUp) {
+                            pushDirStr.z *= 1.8;
+                        } else {
+                            pushDirStr.y *= 1.8;
+                        }
+                    } else {
+                        // For walkline, just amplify the horizontal push so pieces clear the stringers nicely
+                        if (isZUp) {
+                            pushDirStr.x *= 1.5;
+                            pushDirStr.y *= 1.5;
+                        } else {
+                            pushDirStr.x *= 1.5;
+                            pushDirStr.z *= 1.5;
+                        }
+                    }
+
+                    // 3. Apply this unifying vector to all constituent leaf meshes of this item, 
+                    // so the multi-mesh solid item travels through space as one unified block.
+                    meshes.forEach(m => {
+                        originalPositions.set(m.uuid, m.position.clone());
+                        const localPushDir = pushDirStr.clone();
+                        if (m.parent) {
+                            const parentInverse = m.parent.matrixWorld.clone().invert();
+                            localPushDir.transformDirection(parentInverse);
+                        }
+                        explosionDirections.set(m.uuid, localPushDir);
+                    });
                 });
             }
-            
-            // Move parts away from center based on slider (0-200%)
-            const center = new THREE.Vector3(0,0,0); // Assuming model is centered
-            const scale = 1 + (val / 50.0); // max 4x expansion
-            
-            model.traverse(child => {
-                if (child.isMesh && child.name.startsWith("part_")) {
-                    const orig = originalPositions.get(child.uuid);
-                    if (orig) {
-                        child.position.copy(orig).multiplyScalar(scale);
+
+            const explosionFactor = val / 50.0; // 0 to 2.0
+
+            meshMap.forEach((meshes, idx) => {
+                meshes.forEach(m => {
+                    const orig = originalPositions.get(m.uuid);
+                    const pushDir = explosionDirections.get(m.uuid);
+                    if (orig && pushDir) {
+                        m.position.copy(orig).add(pushDir.clone().multiplyScalar(explosionFactor));
                     }
-                }
+                });
             });
         }
+        window.updateExplodedView = updateExplodedView;
 
-        function savePreset() {
+        function savePreset(silent = false) {
             const config = getConfig();
             localStorage.setItem('staircase_preset', JSON.stringify(config));
-            alert("Preset saved locally! 💾");
+            if (!silent) alert("Preset saved locally! 💾");
         }
 
-        function loadPreset() {
+        function loadPreset(silent = false) {
             const saved = localStorage.getItem('staircase_preset');
             if (!saved) {
-                alert("No preset found!");
-                return;
+                if (!silent) alert("No preset found!");
+                return false;
             }
             try {
                 const config = JSON.parse(saved);
                 document.getElementById('model_type').value = config.model_type || 'structural';
                 document.getElementById('width').value = config.width;
-                document.getElementById('width_val').innerText = config.width;
+                document.getElementById('width-val').innerText = config.width;
                 document.getElementById('rise').value = config.rise;
-                document.getElementById('rise_val').innerText = config.rise;
+                document.getElementById('rise-val').innerText = config.rise;
                 document.getElementById('going').value = config.going;
-                document.getElementById('going_val').innerText = config.going;
+                document.getElementById('going-val').innerText = config.going;
                 document.getElementById('inner_r').value = config.inner_r;
-                document.getElementById('inner_r_val').innerText = config.inner_r;
+                document.getElementById('inner_r-val').innerText = config.inner_r;
                 document.getElementById('s_bottom_steps').value = config.s_bottom_steps;
-                document.getElementById('s_bottom_steps_val').innerText = config.s_bottom_steps;
+                document.getElementById('s_bottom_steps-val').innerText = config.s_bottom_steps;
                 document.getElementById('winder_steps').value = config.winder_steps;
-                document.getElementById('winder_steps_val').innerText = config.winder_steps;
+                document.getElementById('winder_steps-val').innerText = config.winder_steps;
                 document.getElementById('s_top_steps').value = config.s_top_steps;
-                document.getElementById('s_top_steps_val').innerText = config.s_top_steps;
-                
+                document.getElementById('s_top_steps-val').innerText = config.s_top_steps;
+                if (config.waist !== undefined) {
+                    document.getElementById('waist').value = config.waist;
+                    document.getElementById('waist-val').innerText = config.waist;
+                }
+                if (config.unified_soffit !== undefined) {
+                    document.getElementById('unified_soffit').checked = config.unified_soffit;
+                }
+
+                // Precision details
+                if (config.nosing !== undefined) {
+                    document.getElementById('nosing').value = config.nosing;
+                    document.getElementById('nosing-val').innerText = config.nosing;
+                }
+                if (config.tread_thickness !== undefined) {
+                    document.getElementById('tread_thickness').value = config.tread_thickness;
+                    document.getElementById('tread_thickness-val').innerText = config.tread_thickness;
+                }
+                if (config.riser_thickness !== undefined) {
+                    document.getElementById('riser_thickness').value = config.riser_thickness;
+                    document.getElementById('riser_thickness-val').innerText = config.riser_thickness;
+                }
+                if (config.stringer_width !== undefined) {
+                    document.getElementById('stringer_width').value = config.stringer_width;
+                    document.getElementById('stringer_width-val').innerText = config.stringer_width;
+                }
+                if (config.carriage_width !== undefined) {
+                    document.getElementById('carriage_width').value = config.carriage_width;
+                    document.getElementById('carriage_width-val').innerText = config.carriage_width;
+                }
+
                 // Clear exploded view
-                if(document.getElementById('exploded_view')) if(document.getElementById('exploded_view')) document.getElementById('exploded_view').value = 0;
-                if(document.getElementById('exploded_val')) if(document.getElementById('exploded_val')) document.getElementById('exploded_val').innerText = '0%';
+                if (document.getElementById('exploded_view')) document.getElementById('exploded_view').value = 0;
+                if (document.getElementById('exploded_val')) document.getElementById('exploded_val').innerText = '0%';
                 if (model) {
-                    model.traverse(child => {
-                        if (child.isMesh && child.name.startsWith("part_")) {
-                            const orig = originalPositions.get(child.uuid);
-                            if (orig) child.position.copy(orig);
-                        }
+                    meshMap.forEach((meshes, idx) => {
+                        meshes.forEach(m => {
+                            const orig = originalPositions.get(m.uuid);
+                            if (orig) m.position.copy(orig);
+                        });
                     });
                 }
-                
+
+                // Reset caches for next generation
+                originalPositions.clear();
+                explosionDirections.clear();
+
                 generateModel();
+                return true;
             } catch (e) {
                 console.error("Failed to load preset", e);
+                return false;
             }
         }
         // --- END NEW FEATURES ---
+
+        // View Widget Logic
+        // The old setView function has been removed as it's replaced by the 3D View Cube.
 
         function setupUI() {
             // Drawer Toggles
             const leftPanel = document.getElementById('controls-panel');
             const rightPanel = document.getElementById('tree-panel');
             const cncPanel = document.getElementById('cnc-panel');
-            
+
             document.getElementById('toggle-left').onclick = () => {
                 leftPanel.classList.toggle('minimised');
                 cncPanel.classList.add('minimised');
             };
-            
+
             document.getElementById('toggle-right').onclick = () => {
                 rightPanel.classList.toggle('minimised');
             };
@@ -563,19 +1089,95 @@
                 populateCncCategories();
             };
 
-            // Slider listeners
+            // Slider listeners (skip the explode slider — it has its own handler)
             document.querySelectorAll('input[type="range"]').forEach(el => {
+                if (el.id === 'exploded_view') return; // preserve updateExplodedView()
                 el.oninput = () => {
                     const display = document.getElementById(el.id + '-val');
                     if (display) display.textContent = el.value;
                 };
             });
 
-            document.getElementById('generate').onclick = () => {
-                // Auto-close drawer on mobile to show model
-                if (window.innerWidth < 768) leftPanel.classList.add('minimised');
-                generateModel();
+            // Explode slider — attach handler programmatically (module scope blocks inline oninput)
+            const explodeSlider = document.getElementById('exploded_view');
+            if (explodeSlider) {
+                explodeSlider.addEventListener('input', updateExplodedView);
+            }
+
+            // Export button handlers
+            document.getElementById('download-glb').onclick = () => downloadExport('glb');
+            document.getElementById('download-gltf').onclick = () => downloadExport('gltf');
+            document.getElementById('download-autocad').onclick = () => downloadExport('autocad');
+            document.getElementById('download-dxf').onclick = () => downloadExport('dxf');
+            document.getElementById('download-bom').onclick = () => downloadBOM();
+
+            document.getElementById('download-cnc-dxf').onclick = async () => {
+                const cats = Array.from(document.querySelectorAll('#cnc-categories input:checked')).map(i => i.value);
+                if (cats.length === 0) {
+                    alert("Select at least one nested category to export.");
+                    return;
+                }
+                const body = JSON.stringify({
+                    config: getConfig(),
+                    categories: cats,
+                    sheet_width: parseFloat(document.getElementById('sheet_width').value),
+                    sheet_height: parseFloat(document.getElementById('sheet_height').value)
+                });
+
+                try {
+                    document.getElementById('download-cnc-dxf').innerText = "Exporting...";
+                    const response = await fetch('/cnc/export-dxf', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: body
+                    });
+                    if (!response.ok) throw new Error(`Export failed: ${response.statusText}`);
+
+                    const blob = await response.blob();
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = 'cnc_nested_layout.dxf';
+                    document.body.appendChild(a);
+                    a.click();
+                    URL.revokeObjectURL(a.href);
+                    document.body.removeChild(a);
+                } catch (error) {
+                    console.error('CNC DXF export error:', error);
+                    alert(`Export failed: ${error.message}`);
+                } finally {
+                    document.getElementById('download-cnc-dxf').innerText = "Export Nested DXF";
+                }
             };
+            // Auto-generate on any parameter change
+            document.querySelectorAll('#controls-panel input').forEach(el => {
+                if (el.id !== 'exploded_view' && el.id !== 'explode_origin') {
+                    el.addEventListener('change', () => {
+                        // Debounce slightly to prevent lag on sliders
+                        clearTimeout(window._genTimeout);
+                        window._genTimeout = setTimeout(generateModel, 300);
+                    });
+                }
+            });
+
+            const originSelect = document.getElementById('explode_origin');
+            if (originSelect) {
+                originSelect.addEventListener('change', () => {
+                    // Reset positions and clear cache so next explosion recalculates vectors
+                    const expElem = document.getElementById('exploded_view');
+                    expElem.value = 0;
+                    document.getElementById('exploded_val').innerText = '0%';
+                    if (model && meshMap.size > 0) {
+                        meshMap.forEach((meshes) => {
+                            meshes.forEach(m => {
+                                const orig = originalPositions.get(m.uuid);
+                                if (orig) m.position.copy(orig);
+                            });
+                        });
+                    }
+                    originalPositions.clear();
+                    explosionDirections.clear();
+                });
+            }
 
             document.getElementById('calculate-nesting').onclick = runNesting;
         }
@@ -592,27 +1194,34 @@
                 s_top_steps: parseInt(document.getElementById('s_top_steps').value),
                 nosing: parseFloat(document.getElementById('nosing').value),
                 tread_thickness: parseFloat(document.getElementById('tread_thickness').value),
+                riser_thickness: parseFloat(document.getElementById('riser_thickness').value),
                 stringer_width: parseFloat(document.getElementById('stringer_width').value),
-                unified_soffit: true,
+                carriage_width: parseFloat(document.getElementById('carriage_width').value),
+                unified_soffit: document.getElementById('unified_soffit').checked,
                 extend_top_flight: 300,
-                waist: 200
+                waist: parseFloat(document.getElementById('waist').value)
             };
         }
 
         async function generateModel() {
             const loading = document.getElementById('loading');
             loading.style.display = 'flex';
-            
+
+            // Auto-save preset on generate
+            savePreset(true);
+
             try {
                 const response = await fetch('/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(getConfig())
                 });
-                
+
                 const data = await response.json();
                 manifest = data.manifest;
-                
+                window._lastGlbBase64 = data.glb;
+                window._categoryStyles = data.styles || {};
+
                 const binaryString = atob(data.glb);
                 const len = binaryString.length;
                 const glbBytes = new Uint8Array(len);
@@ -620,17 +1229,17 @@
                     glbBytes[i] = binaryString.charCodeAt(i);
                 }
                 const url = URL.createObjectURL(new Blob([glbBytes], { type: 'model/gltf-binary' }));
-                
+
                 loader.load(url, (gltf) => {
                     if (model) scene.remove(model);
                     model = gltf.scene;
-                    
+
                     meshMap.clear();
                     model.traverse(child => {
                         if (child.isMesh) {
                             let idx = -1;
                             let curr = child;
-                            while(curr) {
+                            while (curr) {
                                 if (curr.name.startsWith("part_")) {
                                     idx = parseInt(curr.name.split("_")[1]);
                                     break;
@@ -644,31 +1253,36 @@
                             child.userData.originalMaterial = child.material;
                         }
                     });
-                    
+
                     scene.add(model);
-                    
+
                     // Auto-center and fit camera to model
                     const box = new THREE.Box3().setFromObject(model);
                     const center = box.getCenter(new THREE.Vector3());
                     const size = box.getSize(new THREE.Vector3());
-                    
+
                     // Move model to center origin
                     model.position.x += (model.position.x - center.x);
                     model.position.y += (model.position.y - center.y);
                     model.position.z += (model.position.z - center.z);
-                    
+
                     // Update camera position to fit the model
                     const maxDim = Math.max(size.x, size.y, size.z);
                     const fov = camera.fov * (Math.PI / 180);
                     let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
                     cameraZ *= 1.5; // zoom out a little
-                    
+
                     camera.position.set(cameraZ, cameraZ, cameraZ);
                     camera.lookAt(0, 0, 0);
                     controls.target.set(0, 0, 0);
                     controls.update();
 
                     document.getElementById('export-controls').style.display = 'block';
+                    originalPositions.clear(); // Reset explode state for new model
+                    if (document.getElementById('exploded_view')) {
+                        document.getElementById('exploded_view').value = 0;
+                        document.getElementById('exploded_val').innerText = '0%';
+                    }
                     renderObjectTree();
                     loading.style.display = 'none';
                 });
@@ -683,46 +1297,176 @@
             container.innerHTML = '';
             if (!manifest || !manifest.categories) return;
 
+            // Get styles from server response
+            const styles = window._categoryStyles || {};
+
             manifest.categories.forEach(cat => {
-                const node = document.createElement('div');
-                node.innerHTML = `<div class="category-summary"><strong>${cat.name}</strong> (${cat.parts.length})</div>`;
-                const list = document.createElement('div');
-                list.className = 'parts-list';
-                
+                const catNode = document.createElement('div');
+                catNode.className = 'category-node';
+
+                // Default color from styles or fallback
+                const style = styles[cat.name] || {};
+                const defaultColor = style.color
+                    ? `#${style.color.map(c => Math.round(c * 255).toString(16).padStart(2, '0')).join('')}`
+                    : '#888888';
+                const defaultOpacity = style.opacity !== undefined ? style.opacity : 1.0;
+
+                // Category header with controls
+                const header = document.createElement('div');
+                header.className = 'category-summary';
+                header.innerHTML = `
+                    <span class="cat-toggle" style="cursor:pointer;">▶</span>
+                    <strong>${cat.name}</strong> (${cat.parts.length})
+                    <span style="flex:1;"></span>
+                    <button class="icon-btn active" data-cat="${cat.name}" title="Toggle visibility">👁</button>
+                    <input type="color" value="${defaultColor}" data-cat="${cat.name}" title="Category colour" style="width:24px;height:24px;border:none;background:none;cursor:pointer;">
+                    <input type="range" min="0" max="100" value="${Math.round(defaultOpacity * 100)}" data-cat="${cat.name}" title="Opacity" style="width:60px;">
+                `;
+                catNode.appendChild(header);
+
+                // Toggle expand/collapse
+                const toggleArrow = header.querySelector('.cat-toggle');
+                const partsList = document.createElement('div');
+                partsList.className = 'parts-list';
+                partsList.style.display = 'none';
+
+                toggleArrow.onclick = () => {
+                    const open = partsList.style.display !== 'none';
+                    partsList.style.display = open ? 'none' : 'block';
+                    toggleArrow.textContent = open ? '▶' : '▼';
+                };
+
+                // Visibility toggle
+                header.querySelector('.icon-btn').onclick = function () {
+                    const visible = this.classList.toggle('active');
+                    this.textContent = visible ? '👁' : '🚫';
+                    cat.parts.forEach(p => {
+                        const meshes = meshMap.get(p.mesh_index);
+                        if (meshes) meshes.forEach(m => m.visible = visible);
+                    });
+                };
+
+                // Color picker
+                header.querySelector('input[type="color"]').oninput = function () {
+                    const color = new THREE.Color(this.value);
+                    cat.parts.forEach(p => {
+                        const meshes = meshMap.get(p.mesh_index);
+                        if (meshes) meshes.forEach(m => {
+                            m.material = m.material.clone();
+                            m.material.color = color;
+                            m.userData.originalMaterial = m.material;
+                        });
+                    });
+                };
+
+                // Opacity slider
+                header.querySelector('input[type="range"]').oninput = function () {
+                    const opacity = parseInt(this.value) / 100;
+                    cat.parts.forEach(p => {
+                        const meshes = meshMap.get(p.mesh_index);
+                        if (meshes) meshes.forEach(m => {
+                            m.material = m.material.clone();
+                            m.material.opacity = opacity;
+                            m.material.transparent = opacity < 1.0;
+                            m.material.depthWrite = opacity >= 1.0;
+                            m.userData.originalMaterial = m.material;
+                        });
+                    });
+                };
+
+                // Individual parts
                 cat.parts.forEach(p => {
                     const pnode = document.createElement('div');
                     pnode.className = 'part-node';
                     pnode.id = `tree-part-${p.mesh_index}`;
                     pnode.textContent = p.name;
                     pnode.onclick = () => selectPart(p.mesh_index);
-                    list.appendChild(pnode);
+                    partsList.appendChild(pnode);
                 });
-                node.appendChild(list);
-                container.appendChild(node);
+                catNode.appendChild(partsList);
+                container.appendChild(catNode);
             });
         }
 
-        function selectPart(idx) {
-            meshMap.forEach((meshes, mIdx) => {
-                meshes.forEach(m => {
-                    m.material = (mIdx === idx) ? 
-                        new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x38bdf8, emissiveIntensity: 0.5 }) : 
-                        m.userData.originalMaterial;
-                });
-            });
-        }
+
 
         function populateCncCategories() {
             const container = document.getElementById('cnc-categories');
-            if (!manifest) return;
-            container.innerHTML = '<h2>Sheet Content</h2>';
-            manifest.categories.forEach(cat => {
-                container.innerHTML += `
-                    <div style="display:flex; gap:10px; margin-bottom:5px;">
-                        <input type="checkbox" value="${cat.name}" checked> ${cat.name}
-                    </div>
-                `;
-            });
+            if (!manifest || !manifest.categories) return;
+
+            // Check if we have thickness data
+            const hasThickness = manifest.categories.length > 0 && typeof manifest.categories[0].thickness !== 'undefined';
+
+            if (hasThickness) {
+                container.innerHTML = '<h2 style="margin-bottom:0;">Sheet Content</h2><p style="font-size:0.75rem; color:#94a3b8; margin-top:5px; margin-bottom:15px;">All parts on a sheet must share the same material thickness.</p>';
+
+                // Group by thickness
+                const byThickness = {};
+                manifest.categories.forEach(cat => {
+                    const t = cat.thickness || 0;
+                    if (!byThickness[t]) byThickness[t] = [];
+                    byThickness[t].push(cat.name);
+                });
+
+                Object.entries(byThickness).forEach(([thickness, cats]) => {
+                    container.innerHTML += `<div style="font-size:12px; color:#38bdf8; margin-top:12px; margin-bottom:6px; font-weight:bold;">${thickness}mm THICKNESS</div>`;
+                    cats.forEach(name => {
+                        container.innerHTML += `
+                            <div style="display:flex; gap:10px; margin-bottom:5px;">
+                                <input type="checkbox" class="cnc-cat-checkbox" data-thickness="${thickness}" value="${name}"> ${name}
+                            </div>
+                        `;
+                    });
+                });
+
+                setTimeout(() => {
+                    const checkboxes = document.querySelectorAll('.cnc-cat-checkbox');
+
+                    // Pre-select the first thickness group natively
+                    if (checkboxes.length > 0) {
+                        const firstThick = checkboxes[0].getAttribute('data-thickness');
+                        checkboxes.forEach(c => {
+                            if (c.getAttribute('data-thickness') === firstThick) {
+                                c.checked = true;
+                            } else {
+                                c.disabled = true;
+                            }
+                        });
+                    }
+
+                    checkboxes.forEach(cb => {
+                        cb.addEventListener('change', () => {
+                            const checkedArr = Array.from(checkboxes).filter(c => c.checked);
+                            const selectedThickness = checkedArr.length > 0 ? checkedArr[0].getAttribute('data-thickness') : null;
+
+                            checkboxes.forEach(c => {
+                                if (selectedThickness) {
+                                    if (c.getAttribute('data-thickness') !== selectedThickness) {
+                                        c.disabled = true;
+                                        c.checked = false;
+                                    } else {
+                                        c.disabled = false;
+                                    }
+                                } else {
+                                    // None selected, everything possible
+                                    c.disabled = false;
+                                }
+                            });
+                        });
+                    });
+                }, 50);
+
+            } else {
+                container.innerHTML = '<h2>Sheet Content</h2>';
+                manifest.categories.forEach(cat => {
+                    let catName = typeof cat === 'object' ? cat.name : cat;
+                    container.innerHTML += `
+                        <div style="display:flex; gap:10px; margin-bottom:5px;">
+                            <input type="checkbox" value="${catName}" checked> ${catName}
+                        </div>
+                    `;
+                });
+            }
         }
 
         async function runNesting() {
@@ -744,35 +1488,35 @@
         function drawNesting(result) {
             const canvas = document.getElementById('cnc-canvas');
             const ctx = canvas.getContext('2d');
-            
+
             // Set internal resolution based on content
             const numSheets = result.sheet_count || 1;
             const sheetW = 2440;
             const sheetH = 1220;
-            
+
             canvas.width = canvas.offsetWidth * 2;
             const scale = canvas.width / (sheetW + 100);
             canvas.height = (sheetH * scale + 100) * numSheets;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            Object.entries(result.sheets).forEach(([idx, parts]) => {
-                const yOff = idx * (sheetH * scale + 80) + 60;
-                
+
+            Object.entries(result.sheets).forEach(([idx, sheetData]) => {
+                const yOff = parseInt(idx) * (sheetH * scale + 80) + 60;
+
                 // Draw Sheet Border
                 ctx.strokeStyle = '#38bdf8';
                 ctx.lineWidth = 4;
                 ctx.strokeRect(20, yOff, sheetW * scale, sheetH * scale);
                 ctx.fillStyle = 'rgba(255,255,255,0.02)';
                 ctx.fillRect(20, yOff, sheetW * scale, sheetH * scale);
-                
+
                 ctx.fillStyle = '#38bdf8';
                 ctx.font = 'bold 24px Inter';
-                ctx.fillText(`SHEET ${parseInt(idx)+1} - ${result.efficiency}% EFFICIENCY`, 20, yOff - 15);
-                
-                parts.forEach(p => {
+                ctx.fillText(`SHEET ${parseInt(idx) + 1} - ${sheetData.efficiency}% EFFICIENCY`, 20, yOff - 15);
+
+                sheetData.parts.forEach(p => {
                     if (!p.points) return;
-                    
+
                     ctx.beginPath();
                     p.points.forEach((pt, i) => {
                         let px = pt[0], py = pt[1];
@@ -782,32 +1526,32 @@
                         }
                         const drawX = 20 + (p.x + px) * scale;
                         const drawY = yOff + (p.y + py) * scale;
-                        
+
                         if (i === 0) ctx.moveTo(drawX, drawY);
                         else ctx.lineTo(drawX, drawY);
                     });
                     ctx.closePath();
-                    
+
                     ctx.fillStyle = 'rgba(56, 189, 248, 0.2)';
                     ctx.fill();
                     ctx.strokeStyle = '#38bdf8';
                     ctx.lineWidth = 1;
                     ctx.stroke();
-                    
+
                     // Small Label
                     ctx.fillStyle = 'white';
                     ctx.font = '12px Inter';
                     ctx.fillText(p.name, 20 + p.x * scale + 5, yOff + p.y * scale + 15);
                 });
             });
-            
+
             document.getElementById('nesting-stats').innerHTML = `
                 <div style="padding: 10px; background: rgba(56,189,248,0.1); border-radius: 8px;">
                     <strong>ALGO:</strong> ${result.algo.split('.').pop()} | 
                     <strong>SHEETS:</strong> ${result.sheet_count}
                 </div>
             `;
-            
+
             const dxfBtn = document.getElementById('download-cnc-dxf');
             dxfBtn.disabled = false;
         }
@@ -823,8 +1567,8 @@
             document.getElementById('viewport').appendChild(renderer.domElement);
             window.addEventListener('click', onMouseClick, false);
             controls = new OrbitControls(camera, renderer.domElement);
-            window.addEventListener('click', onMouseClick, false);
-            
+
+
             const light = new THREE.DirectionalLight(0xffffff, 2);
             light.position.set(1, 1, 1);
             scene.add(light);
@@ -837,17 +1581,17 @@
             });
         }
 
-        
+
         function onMouseClick(event) {
             // Only raycast if clicking inside viewport
             if (event.clientX < 280) return; // clicking in side panel
-            
+
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-            
+
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObjects(scene.children, true);
-            
+
             let clickedIdx = -1;
             for (let i = 0; i < intersects.length; i++) {
                 let obj = intersects[i].object;
@@ -856,27 +1600,27 @@
                     break; // Just grab the first valid part hit
                 }
             }
-            
+
             selectPart(clickedIdx);
         }
-        
+
         function selectPart(idx) {
             // Reset previous highlights
             selectedMeshes.forEach(m => {
                 if (m.userData.originalMaterial) m.material = m.userData.originalMaterial;
             });
             selectedMeshes = [];
-            
+
             // Remove UI highlights
             document.querySelectorAll('.part-node').forEach(el => el.classList.remove('highlighted'));
-            
+
             const panel = document.getElementById('selection-panel');
-            
+
             if (idx === -1 || !meshMap.has(idx)) {
                 panel.style.display = 'none';
                 return;
             }
-            
+
             // Highlight 3D mesh
             const meshes = meshMap.get(idx);
             meshes.forEach(m => {
@@ -887,7 +1631,7 @@
                 m.material = mat;
                 selectedMeshes.push(m);
             });
-            
+
             // Find in manifest for data
             let partData = null;
             manifest.categories.forEach(cat => {
@@ -895,17 +1639,17 @@
                     if (p.mesh_index === idx) partData = p;
                 });
             });
-            
+
             if (partData) {
                 document.getElementById('sel-title').innerText = partData.name.replace("_", " ").toUpperCase();
                 document.getElementById('sel-volume').innerText = partData.volume_mm3.toLocaleString();
                 document.getElementById('sel-liters').innerText = (partData.volume_mm3 / 1000000).toFixed(2);
-                
+
                 const dims = partData.bbox.size;
                 document.getElementById('sel-dims').innerText = `${dims[0]} x ${dims[1]} x ${dims[2]}`;
-                
+
                 panel.style.display = 'block';
-                
+
                 // Highlight UI tree item
                 const treeItem = document.getElementById(`tree-part-${idx}`);
                 if (treeItem) {
@@ -916,11 +1660,142 @@
         }
 
         window.selectPart = selectPart;
+
+        function initCube() {
+            const container = document.getElementById('view-cube');
+            cubeRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            cubeRenderer.setSize(100, 100);
+            container.appendChild(cubeRenderer.domElement);
+
+            cubeScene = new THREE.Scene();
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            cubeScene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+            dirLight.position.set(2, 5, 5);
+            cubeScene.add(dirLight);
+
+            cubeCamera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+            cubeCamera.position.set(0, 0, 4);
+
+            const geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+
+            // Create texture canvas for faces
+            const createFace = (text) => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 128;
+                canvas.height = 128;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#cbd5e1';
+                ctx.fillRect(0, 0, 128, 128);
+                // Thick border
+                ctx.strokeStyle = '#334155';
+                ctx.lineWidth = 12;
+                ctx.strokeRect(0, 0, 128, 128);
+                // Inner border
+                ctx.strokeStyle = '#94a3b8';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(6, 6, 116, 116);
+
+                ctx.font = 'bold 26px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#0f172a';
+                ctx.fillText(text, 64, 64);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                return new THREE.MeshStandardMaterial({ map: texture, roughness: 0.6, metalness: 0.1 });
+            };
+
+            const materials = [
+                createFace('RIGHT'),    // +x
+                createFace('LEFT'),     // -x
+                createFace('BACK'),     // +y
+                createFace('FRONT'),    // -y
+                createFace('TOP'),      // +z
+                createFace('BOTTOM')    // -z
+            ];
+
+            viewCube = new THREE.Mesh(geometry, materials);
+
+            // Add compass ring underneath
+            const ringGeo = new THREE.RingGeometry(1.1, 1.4, 32);
+            const ringMat = new THREE.MeshBasicMaterial({ color: 0x475569, side: THREE.DoubleSide, opacity: 0.5, transparent: true });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = Math.PI / 2;
+            ring.position.y = -0.9;
+            cubeScene.add(ring);
+
+            cubeScene.add(viewCube);
+
+            container.addEventListener('pointerdown', function (event) {
+                const rect = container.getBoundingClientRect();
+                cubeMouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+                cubeMouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+                cubeRaycaster.setFromCamera(cubeMouse, cubeCamera);
+
+                const intersects = cubeRaycaster.intersectObject(viewCube);
+                if (intersects.length > 0) {
+                    // Check exactly where on the cube they clicked (the local 3D point)
+                    // The cube is 1.5 x 1.5 x 1.5, centered at 0,0,0
+                    const pt = viewCube.worldToLocal(intersects[0].point.clone());
+
+                    // Normalize the click point so it essentially acts as a direction vector
+                    // e.g. clicking the corner (+0.75, +0.75, +0.75) gives a diagonal vector
+                    const dir = pt.clone().normalize();
+                    snapToDirection(dir);
+                }
+            });
+        }
+
+        function snapToDirection(dirVector) {
+            if (!model) return;
+            const box = new THREE.Box3().setFromObject(model);
+            const size = box.getSize(new THREE.Vector3());
+
+            // Push the camera out far enough along the chosen vector to see the whole model
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const dist = maxDim * 1.5;
+
+            controls.target.set(0, 0, 0);
+
+            // To get distinct 45-degree angle snaps instead of arbitrary smooth angles,
+            // we round the direction vector components slightly so clicking near a corner snaps perfectly
+            const snap = (val) => {
+                if (val > 0.3) return 1;
+                if (val < -0.3) return -1;
+                return 0;
+            };
+
+            const snappedDir = new THREE.Vector3(
+                snap(dirVector.x),
+                snap(dirVector.y),
+                snap(dirVector.z)
+            ).normalize();
+
+            camera.position.copy(snappedDir).multiplyScalar(dist);
+            camera.lookAt(0, 0, 0);
+            controls.update();
+        }
+
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
             renderer.render(scene, camera);
+
+            // Sync view cube
+            if (cubeCamera && viewCube) {
+                cubeCamera.position.copy(camera.position).normalize().multiplyScalar(4);
+                cubeCamera.lookAt(0, 0, 0);
+                cubeCamera.up.copy(camera.up);
+                cubeRenderer.render(cubeScene, cubeCamera);
+            }
         }
+
+        // Start animation loop AFTER everything is defined
+        requestAnimationFrame(animate);
+
     </script>
 </body>
+
 </html>
