@@ -64,6 +64,65 @@ def get_true_walkline(config, offset_from_inner=None, z_offset=0.0):
     return pts
 
 
+def get_outer_perimeter_path(config, inset=25.0, z_offset=0.0):
+    """
+    Calculates the 3D path following the geometric square outer corner of the stairwell,
+    rather than a curved arc. Used for exterior balusters and handrails that mount to 
+    the external stringer/wall.
+    """
+    width = config["width"]
+    rise = config["rise"]
+    going = config["going"]
+    inner_r = config["inner_r"]
+    sb = config["s_bottom_steps"]
+    w_steps = config["winder_steps"]
+    st = config["s_top_steps"]
+    
+    pts = []
+    
+    # Bottom Flight
+    local_y = -inner_r - width + inset
+    for i in range(sb + 1):
+        x = i * going
+        z = i * rise + z_offset
+        pts.append(Vector(x, local_y, z))
+        
+    # Winder (Angles from -90 to 0)
+    pivot_x = sb * going
+    angle_per = 90.0 / w_steps if w_steps > 0 else 0
+    winder_width = width - inset  # Radius to the handrail line
+    
+    if w_steps > 0:
+        for i in range(1, w_steps):
+            angle_deg = -90 + i * angle_per
+            a_rad = math.radians(angle_deg)
+            
+            # Calculate intersection with the square perimeter bounding box
+            if angle_deg < -45:
+                if abs(angle_deg + 90) < 1e-6:
+                    r_outer = winder_width
+                else:
+                    r_outer = abs(-winder_width / math.sin(a_rad))
+            else:
+                r_outer = abs(winder_width / math.cos(a_rad))
+            
+            total_r = inner_r + r_outer
+            x = pivot_x + total_r * math.cos(a_rad)
+            y = total_r * math.sin(a_rad)
+            z = (sb + i) * rise + z_offset
+            pts.append(Vector(x, y, z))
+            
+    # Top Flight
+    start_z = (sb + w_steps) * rise
+    for i in range(st + 1):
+        x = pivot_x + inner_r + width - inset
+        y = i * going
+        z = start_z + i * rise + z_offset
+        pts.append(Vector(x, y, z))
+        
+    return pts
+
+
 def build_handrail(config, height=900.0, diameter=40.0):
     """
     Builds a 3D handrail solid by sweeping a profile.
