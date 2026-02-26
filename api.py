@@ -324,7 +324,12 @@ def pack_glb(gltf_path, category_counts=None, part_face_counts=None):
 
 @app.get("/", response_class=HTMLResponse)
 async def read_index():
-    with open(os.path.join("web", "index.html"), "r", encoding="utf-8") as f:
+    with open(os.path.join("web", "index_v4.html"), "r", encoding="utf-8") as f:
+        return f.read()
+
+@app.get("/v4", response_class=HTMLResponse)
+async def read_index_v4():
+    with open(os.path.join("web", "index_v4.html"), "r", encoding="utf-8") as f:
         return f.read()
 
 

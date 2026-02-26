@@ -28,7 +28,7 @@ DEFAULT_CONFIG = {
     "unified_soffit": False
 }
 
-def build_staircase(config):
+def build_staircase(config, return_cuts=False):
     """Build the full staircase assembly from config dict."""
     width = config["width"]
     rise = config["rise"]
@@ -121,9 +121,11 @@ def build_staircase(config):
         pts.append((-2000, pivot_y + y_off, -2000 * rise / going - waist))
         
         if sb_length > 0:
-            n_sb = 6
-            for i in range(n_sb):
-                x = i * sb_length / (n_sb - 1)
+            # Fixed dense sampling to prevent spline tension pulling
+            dist = 50.0
+            n_intervals = max(2, int(sb_length / dist))
+            for i in range(n_intervals + 1):
+                x = i * sb_length / n_intervals
                 z = x * rise / going - waist
                 pts.append((x, pivot_y + y_off, z))
         else:
@@ -136,7 +138,7 @@ def build_staircase(config):
             pts.append((corner_x, corner_y, z))
         else:
             # Curved inner — sample multiple points around the arc
-            n_arc = 5
+            n_arc = max(5, int((cur_r * math.pi / 2) / 50.0))
             for i in range(n_arc):
                 t = (i + 1) / (n_arc + 1)
                 angle = math.radians(-90 + t * 90)
@@ -147,15 +149,20 @@ def build_staircase(config):
         
         # Top flight (extend well beyond end)
         if st_length > 0:
-            n_st = 6
-            for i in range(1, n_st):
-                y = i * st_length / (n_st - 1)
+            dist = 50.0
+            n_intervals = max(2, int(st_length / dist))
+            for i in range(1, n_intervals + 1):
+                y = i * st_length / n_intervals
                 z = winder_top_z + y * rise / going - waist
                 pts.append((x_off, y, z))
         else:
              pts.append((x_off, 0, winder_top_z - waist))
         
-        pts.append((x_off, st_length + 2000, winder_top_z + (st_length + 2000) * rise / going - waist))
+        # We need a few more points continuing straight up to ensure the spline tangency
+        # doesn't wobble at the very end when it hits the 2000mm extension.
+        for e_dist in [100, 500, 1000, 2000]:
+            pts.append((x_off, st_length + e_dist, winder_top_z + (st_length + e_dist) * rise / going - waist))
+            
         return pts
     
     inner_pts = get_soffit_path_pts(is_outer=False)
@@ -171,6 +178,9 @@ def build_staircase(config):
     
     result = stair_solid - soffit_cut
     print(f"Unified soffit applied (RuledSurface spline)")
+    
+    if return_cuts:
+        return result, soffit_cut
     return result
 
 if __name__ == "__main__":

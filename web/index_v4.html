@@ -455,7 +455,7 @@
     <header>
         <div class="brand">
             <h1>Staircase Studio <span id="mode-badge"
-                    style="font-size: 0.6rem; padding: 2px 6px; background: var(--accent-warm); color: black; border-radius: 4px; margin-left: 5px;">V3</span>
+                    style="font-size: 0.6rem; padding: 2px 6px; background: var(--accent-warm); color: black; border-radius: 4px; margin-left: 5px;">V4</span>
             </h1>
         </div>
 
@@ -508,7 +508,7 @@
                 </div>
                 <div class="control-group">
                     <label>Soffit/Waist <span class="value-display" id="waist-val">150</span></label>
-                    <input type="range" id="waist" min="100" max="300" step="5" value="150">
+                    <input type="range" id="waist" min="100" max="450" step="5" value="150">
                 </div>
                 <div class="control-group"
                     style="flex-direction: row; justify-content: space-between; align-items: center;">
@@ -677,12 +677,9 @@
         const cubeRaycaster = new THREE.Raycaster();
         const cubeMouse = new THREE.Vector2();
 
-        init();
-        initCube();
-        setupUI();
-        if (!loadPreset(true)) {
-            generateModel();
-        }
+        // Initialize UI, Renderer and Animation Loop
+        // These calls are moved to the end of the script to ensure all functions
+        // and variables (such as targetExplosionFactor) are defined before use.
 
         // --- NEW FEATURES ---
 
@@ -776,6 +773,11 @@
         }
         window.downloadExport = downloadExport;
 
+        let targetExplosionFactor = 0;
+        let currentExplosionFactor = 0;
+        let isExploding = false;
+
+        // Cache for explosion vectors
         let originalPositions = new Map();
         let explosionDirections = new Map();
 
@@ -785,11 +787,14 @@
             const val = parseInt(expElem.value);
             document.getElementById('exploded_val').innerText = val + '%';
 
+            // Set the target factor for the animation loop
+            targetExplosionFactor = val / 50.0; // 0 to 2.0
+
             if (!model || meshMap.size === 0) return;
 
             // Compute and cache directions on first slide
             if (originalPositions.size === 0) {
-                // Determine the overall bounding box to find the vertical center (Z axis in three.js if up is Z, or Y if up is Y)
+                // Determine the overall bounding box to calculate the exact epicenter
                 const box = new THREE.Box3().setFromObject(model);
                 const isZUp = (box.max.z - box.min.z) > (box.max.y - box.min.y);
 
@@ -910,18 +915,11 @@
                         anchorPoint = getClosestWalklinePoint(partCenter);
                     }
 
-                    // 2. Compute Explosion Vector
-                    // Use a clean proportional geometric explosion based on distance from the anchor point.
+                    // 2. Compute Explosion Vector (in World Space)
                     const pushDirStr = new THREE.Vector3();
-                    const dx = partCenter.x - anchorPoint.x;
-                    const dy = partCenter.y - anchorPoint.y;
-                    const dz = partCenter.z - anchorPoint.z;
+                    pushDirStr.subVectors(partCenter, anchorPoint);
 
-                    pushDirStr.set(dx, dy, dz);
-
-                    // If anchoring to a center/bottom point, apply vertical lifting
-                    // If anchoring to the walkline, NO vertical lifting is needed because the walkline already ascends 
-                    // alongside the parts naturally, so dz is already local to the step's height!
+                    // Optional axis scaling based on documentation logic
                     if (originType !== 'walkline') {
                         if (isZUp) {
                             pushDirStr.z *= 1.8;
@@ -929,7 +927,6 @@
                             pushDirStr.y *= 1.8;
                         }
                     } else {
-                        // For walkline, just amplify the horizontal push so pieces clear the stringers nicely
                         if (isZUp) {
                             pushDirStr.x *= 1.5;
                             pushDirStr.y *= 1.5;
@@ -939,28 +936,33 @@
                         }
                     }
 
-                    // 3. Apply this unifying vector to all constituent leaf meshes of this item, 
-                    // so the multi-mesh solid item travels through space as one unified block.
+                    // 3. Cache the original world position and the calculated world direction
                     meshes.forEach(m => {
-                        originalPositions.set(m.uuid, m.position.clone());
-                        const localPushDir = pushDirStr.clone();
-                        if (m.parent) {
-                            const parentInverse = m.parent.matrixWorld.clone().invert();
-                            localPushDir.transformDirection(parentInverse);
-                        }
-                        explosionDirections.set(m.uuid, localPushDir);
+                        const worldPos = new THREE.Vector3();
+                        m.getWorldPosition(worldPos);
+                        originalPositions.set(m.uuid, worldPos.clone());
+                        explosionDirections.set(m.uuid, pushDirStr.clone());
                     });
                 });
             }
+        }
 
-            const explosionFactor = val / 50.0; // 0 to 2.0
-
+        // Apply explosion based on the interpolated factor
+        function applyExplosion(factor) {
             meshMap.forEach((meshes, idx) => {
                 meshes.forEach(m => {
-                    const orig = originalPositions.get(m.uuid);
-                    const pushDir = explosionDirections.get(m.uuid);
-                    if (orig && pushDir) {
-                        m.position.copy(orig).add(pushDir.clone().multiplyScalar(explosionFactor));
+                    const origWorld = originalPositions.get(m.uuid);
+                    const pushDirWorld = explosionDirections.get(m.uuid);
+
+                    if (origWorld && pushDirWorld && m.parent) {
+                        // 1. Calculate the intended Target Position in absolute World Space
+                        const targetWorldPos = new THREE.Vector3().copy(origWorld).add(pushDirWorld.clone().multiplyScalar(factor));
+
+                        // 2. Safely convert that World Space point into the Local Space of this specific mesh's parent
+                        const targetLocalPos = m.parent.worldToLocal(targetWorldPos.clone());
+
+                        // 3. Apply the clean local coordinate without inheriting extraneous skew/rotation
+                        m.position.copy(targetLocalPos);
                     }
                 });
             });
@@ -1027,16 +1029,13 @@
                 }
 
                 // Clear exploded view
-                if (document.getElementById('exploded_view')) document.getElementById('exploded_view').value = 0;
-                if (document.getElementById('exploded_val')) document.getElementById('exploded_val').innerText = '0%';
-                if (model) {
-                    meshMap.forEach((meshes, idx) => {
-                        meshes.forEach(m => {
-                            const orig = originalPositions.get(m.uuid);
-                            if (orig) m.position.copy(orig);
-                        });
-                    });
+                if (document.getElementById('exploded_view')) {
+                    document.getElementById('exploded_view').value = 0;
+                    targetExplosionFactor = 0;
+                    currentExplosionFactor = 0;
                 }
+                if (document.getElementById('exploded_val')) document.getElementById('exploded_val').innerText = '0%';
+                if (model) applyExplosion(0);
 
                 // Reset caches for next generation
                 originalPositions.clear();
@@ -1166,15 +1165,11 @@
                     // Reset positions and clear cache so next explosion recalculates vectors
                     const expElem = document.getElementById('exploded_view');
                     expElem.value = 0;
+                    targetExplosionFactor = 0;
+                    currentExplosionFactor = 0;
                     document.getElementById('exploded_val').innerText = '0%';
-                    if (model && meshMap.size > 0) {
-                        meshMap.forEach((meshes) => {
-                            meshes.forEach(m => {
-                                const orig = originalPositions.get(m.uuid);
-                                if (orig) m.position.copy(orig);
-                            });
-                        });
-                    }
+                    if (model && meshMap.size > 0) applyExplosion(0);
+
                     originalPositions.clear();
                     explosionDirections.clear();
                 });
@@ -1286,6 +1281,8 @@
                     if (document.getElementById('exploded_view')) {
                         document.getElementById('exploded_view').value = 0;
                         document.getElementById('exploded_val').innerText = '0%';
+                        targetExplosionFactor = 0;
+                        currentExplosionFactor = 0;
                     }
                     renderObjectTree();
                     loading.style.display = 'none';
@@ -1784,16 +1781,37 @@
 
         function animate() {
             requestAnimationFrame(animate);
-            controls.update();
-            renderer.render(scene, camera);
 
-            // Sync view cube
-            if (cubeCamera && viewCube) {
-                cubeCamera.position.copy(camera.position).normalize().multiplyScalar(4);
-                cubeCamera.lookAt(0, 0, 0);
-                cubeCamera.up.copy(camera.up);
-                cubeRenderer.render(cubeScene, cubeCamera);
+            if (renderer && scene && camera) {
+                // Smooth interpolation for the exploded view
+                if (Math.abs(targetExplosionFactor - currentExplosionFactor) > 0.001) {
+                    currentExplosionFactor = THREE.MathUtils.lerp(currentExplosionFactor, targetExplosionFactor, 0.1);
+                    applyExplosion(currentExplosionFactor);
+                } else if (targetExplosionFactor === 0 && currentExplosionFactor !== 0) {
+                    currentExplosionFactor = 0;
+                    applyExplosion(0);
+                }
+
+                controls.update();
+                renderer.render(scene, camera);
+
+                // Sync view cube
+                if (cubeCamera && viewCube) {
+                    cubeCamera.position.copy(camera.position).normalize().multiplyScalar(4);
+                    cubeCamera.lookAt(0, 0, 0);
+                    cubeCamera.up.copy(camera.up);
+                    cubeRenderer.render(cubeScene, cubeCamera);
+                }
             }
+        }
+
+        // Initialize UI, Renderer and Animation Loop
+        setupUI();
+        init();
+        initCube();
+
+        if (!loadPreset(true)) {
+            generateModel();
         }
 
         // Start animation loop AFTER everything is defined

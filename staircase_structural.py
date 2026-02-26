@@ -371,61 +371,7 @@ def _winder_corner_stringers(volumetric, winder_width, str_width, pivot_global):
 
 # ===========================================================================
 # PLASTER SOFFIT VIA BOOLEAN SUBTRACTION
-# ===========================================================================
-
-def _build_plaster_shell(config, volumetric_outer=None):
-    """Build the plaster soffit efficiently by thickening the bottom faces.
-    
-    OPTIMIZED: Avoids a massive 3D solid subtraction by filtering for downward-facing
-    surfaces of the volumetric model and thickening them directly.
-    """
-    plaster_t = config["plaster_thickness"]
-    if plaster_t <= 0: return None
-
-    if volumetric_outer is None:
-        cfg_outer = config.copy()
-        cfg_outer["unified_soffit"] = config.get("unified_soffit", True)
-        volumetric_outer = build_staircase(cfg_outer)
-
-    # Find all faces that point generally downwards (Z normal < -0.1)
-    bottom_faces = [f for f in volumetric_outer.faces() if f.normal_at(f.center()).Z < -0.1]
-    
-    if not bottom_faces:
-        print("Warning: Could not find bottom faces for plaster shell.")
-        return None
-
-    # Thicken the faces downwards to create the shell
-    try:
-        shell = thicken(bottom_faces, amount=-plaster_t)
-        print(f"Plaster shell: {plaster_t}mm thick, volume={shell.volume:.0f}mm³")
-        return shell
-    except Exception as e:
-        print(f"Warning: thicken() failed for plaster shell: {e}")
-        # Fallback to the old boolean method if thicken fails on complex geometry
-        cfg_inner = config.copy()
-        cfg_inner["waist"] = config["waist"] - plaster_t
-        cfg_inner["unified_soffit"] = config.get("unified_soffit", True)
-        # Slightly oversize inner solid so it cleanly cuts side faces without leaving coplanar artifacts
-        cfg_inner["width"] = config["width"] + 2.0
-        cfg_inner["inner_r"] = max(1.0, config["inner_r"] - 1.0)
-        # Note: changing inner_r moves the winder pivot relative to the steps, 
-        # so keeping inner_r same and only increasing width is safer for straight flights.
-        # Actually, for perfect side cuts, we can just oversize width and use the boolean result,
-        # but the winder inner radius needs to cleanly cut too.
-        stair_inner = build_staircase(cfg_inner)
-        
-        # We need stair_inner to be slightly offset in locally horizontal directions.
-        # Because build123d boolean subtraction with perfectly aligned faces leaves artifacts.
-        # A simpler robust way is to drop it slightly in Z as well to clear treads completely.
-        # It's already dropped by waist. To clear sides, we can just rely on the boolean
-        # or we accept the fallback is imperfect. Let's return the clean subtraction.
-        try:
-            return volumetric_outer - stair_inner
-        except:
-            return None
-
-
-# ===========================================================================
+# ===========================================================================# ===========================================================================
 # MAIN ASSEMBLY
 # ===========================================================================
 
@@ -468,7 +414,19 @@ def build_structural_staircase(config):
     print(f"  Building volumetric reference...")
     vol_config = config.copy()
     vol_config["unified_soffit"] = config.get("unified_soffit", True)
-    volumetric = build_staircase(vol_config)
+    
+    vol_res = build_staircase(vol_config, return_cuts=True)
+    if isinstance(vol_res, tuple) and len(vol_res) == 2:
+        volumetric, soffit_cut = vol_res
+    else:
+        volumetric = vol_res
+        soffit_cut = None
+
+    if volumetric and not isinstance(volumetric, (Solid, Compound)):
+        if hasattr(volumetric, "solids"):
+            volumetric = Compound(children=volumetric.solids())
+        else:
+            volumetric = Compound(children=volumetric)
 
     # -----------------------------------------------------------------------
     # 1. BOTTOM FLIGHT  — +X, inner edge at Y=-inner_r
@@ -523,10 +481,22 @@ def build_structural_staircase(config):
     all_carriages.extend(_rotate_translate(c2))
 
     # -----------------------------------------------------------------------
-    # 4. PLASTER SOFFIT (boolean subtraction, reuses volumetric)
+    # 4. PLASTER SOFFIT (fast boolean intersection)
     # -----------------------------------------------------------------------
-    print(f"  Building plaster shell (boolean)...")
-    plaster = _build_plaster_shell(config, volumetric_outer=volumetric)
+    print(f"  Building plaster shell (fast boolean intersection)...")
+    plaster_t = config.get("plaster_thickness", 10.0)
+    plaster = None
+    if plaster_t > 0 and soffit_cut is not None:
+        try:
+            # The soffit_cut object represents the entire void mass underneath the stairs.
+            # We lift it by plaster_t and intersect it with the staircase itself 
+            # to extract a perfect slice of the bottom geometry.
+            plaster_cut = soffit_cut.translate((0, 0, plaster_t))
+            plaster_raw = volumetric & plaster_cut
+            if plaster_raw and len(plaster_raw.solids()) > 0:
+                plaster = plaster_raw
+        except Exception as e:
+            print(f"  [!] Failed to generate fast plaster shell: {e}")
 
     # -----------------------------------------------------------------------
     # 5. RECESS STRINGERS & CARRIAGES
@@ -536,13 +506,21 @@ def build_structural_staircase(config):
     # We intersect with the volumetric model to guarantee they stay inside the envelope.
     print(f"  Trimming structural elements to volumetric envelope...")
     
-    def _trim_to_envelope(parts, envelope):
+    def _trim_to_envelope(parts, envelope, subtract_envelope=None):
         trimmed = []
         for p in parts:
             if not p or len(p.solids()) == 0: continue
             try:
                 # Intersect with the overall volumetric envelope
                 clipped = p & envelope
+                
+                # If there's a plaster envelope, subtract it so framing stays INSIDE the plaster layer
+                if clipped and subtract_envelope and len(clipped.solids()) > 0:
+                    try:
+                        clipped = clipped - subtract_envelope
+                    except Exception as sub_e:
+                        print(f"    Warning: Plaster subtract failed: {sub_e}")
+
                 if clipped and len(clipped.solids()) > 0:
                     trimmed.append(clipped)
                 else:
@@ -552,8 +530,8 @@ def build_structural_staircase(config):
                 trimmed.append(p)
         return trimmed
 
-    all_stringers = _trim_to_envelope(all_stringers, volumetric)
-    all_carriages = _trim_to_envelope(all_carriages, volumetric)
+    all_stringers = _trim_to_envelope(all_stringers, volumetric, subtract_envelope=plaster)
+    all_carriages = _trim_to_envelope(all_carriages, volumetric, subtract_envelope=plaster)
 
     # -----------------------------------------------------------------------
     # 5.5 ROUTE OUTER STRINGERS
