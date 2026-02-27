@@ -39,7 +39,9 @@ def build_staircase(config, return_cuts=False):
     sb_steps = config["s_bottom_steps"]
     w_steps = config["winder_steps"]
     st_steps = config["s_top_steps"]
-    ext_top = config["extend_top_flight"]
+    # Crucial Fix: ensure the top flight mass extends deep enough to intersect the unified soffit
+    # even when waist is abnormally large (>300mm), preventing rectangular under-extrusion notches.
+    ext_top = max(config.get("extend_top_flight", 300), waist + 500)
     unified = config.get("unified_soffit", True)
     
     # Derived Dimensions

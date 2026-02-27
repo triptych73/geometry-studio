@@ -33,7 +33,6 @@ DEFAULT_STRUCTURAL_CONFIG = {
     "tread_thickness": 20, "riser_thickness": 20,
     "stringer_width": 50, "stringer_depth": 220,
     "carriage_width": 50, "carriage_depth": 180,
-    "rib_spacing": 300, "rib_width": 18, "rib_depth": 100,
     "plaster_thickness": 10,
 }
 
@@ -52,7 +51,6 @@ MINIMAL_STRUCTURAL_CONFIG = {
     "tread_thickness": 20, "riser_thickness": 20,
     "stringer_width": 50, "stringer_depth": 220,
     "carriage_width": 50, "carriage_depth": 180,
-    "rib_spacing": 300, "rib_width": 18, "rib_depth": 100,
     "plaster_thickness": 10,
 }
 
@@ -150,10 +148,10 @@ class TestGenerate:
 
     def test_manifest_part_structure(self):
         """Each part in manifest has mesh_index, volume, bbox.
-        NOTE: Thin geometry parts (plaster, ribs) may report volume=0."""
+        NOTE: Thin geometry parts (plaster) may report volume=0."""
         r = client.post("/generate", json=MINIMAL_STRUCTURAL_CONFIG)
         cats = r.json()["manifest"]["categories"]
-        THIN_GEOMETRY_CATS = {"plaster", "ribs"}  # Known edge cases
+        THIN_GEOMETRY_CATS = {"plaster"}  # Known edge cases
         for cat in cats:
             for part in cat["parts"]:
                 assert "mesh_index" in part
@@ -167,7 +165,7 @@ class TestGenerate:
         NOTE: Thin geometry parts may have zero-dimension bbox."""
         r = client.post("/generate", json=MINIMAL_STRUCTURAL_CONFIG)
         cats = r.json()["manifest"]["categories"]
-        THIN_GEOMETRY_CATS = {"plaster", "ribs"}
+        THIN_GEOMETRY_CATS = {"plaster"}
         for cat in cats:
             for part in cat["parts"]:
                 bb = part["bbox"]
@@ -297,7 +295,7 @@ class TestCNCNest:
         NOTE: Some categories may fail profile extraction; accepts any response."""
         r = client.post("/cnc/nest", json={
             "config": MINIMAL_STRUCTURAL_CONFIG,
-            "categories": ["treads", "risers", "stringers", "carriages", "ribs", "plaster"],
+            "categories": ["treads", "risers", "stringers", "carriages", "plaster"],
             "sheet_width": 2440,
             "sheet_height": 1220,
         })

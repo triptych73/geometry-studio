@@ -489,6 +489,53 @@
                     </select>
                 </div>
 
+                <h2>Input Mode</h2>
+                <div class="control-group" style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <label
+                        style="flex: 1; margin: 0; background: rgba(56,189,248,0.1); padding: 8px; border-radius: 6px; cursor: pointer; text-align: center; border: 1px solid var(--accent);"
+                        id="label-explicit">
+                        <input type="radio" name="input_mode" value="explicit" checked style="display:none;"> Explicit
+                        Stairs
+                    </label>
+                    <label
+                        style="flex: 1; margin: 0; background: rgba(255,255,255,0.05); padding: 8px; border-radius: 6px; cursor: pointer; text-align: center; border: 1px solid transparent;"
+                        id="label-fit">
+                        <input type="radio" name="input_mode" value="fit" style="display:none;"> Fit to Space
+                    </label>
+                </div>
+
+                <!-- Bounding Box Inputs -->
+                <div id="bounding-box-controls"
+                    style="display: none; background: rgba(15,23,42,0.5); padding: 15px; border-radius: 8px; border: 1px dashed rgba(56,189,248,0.3); margin-bottom: 20px;">
+                    <div
+                        style="font-size: 0.75rem; color: var(--accent); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.1em;">
+                        Cuboid Constraints</div>
+
+                    <div class="control-group">
+                        <label>Total Height (Floor to Floor Z) <span class="value-display">mm</span></label>
+                        <input type="number" id="bb_height" value="2750">
+                    </div>
+                    <div class="control-group">
+                        <label>Total Length (Horizontal Space) <span class="value-display">mm</span></label>
+                        <input type="number" id="bb_length" value="3000">
+                    </div>
+                    <div class="control-group">
+                        <label>Total Width (Stairwell Depth) <span class="value-display">mm</span></label>
+                        <input type="number" id="bb_width" value="2500">
+                    </div>
+                    <div class="control-group"
+                        style="flex-direction: row; justify-content: space-between; align-items: center;">
+                        <label for="bb_strict" style="margin-bottom: 0;">Strict UK Part K Compliance</label>
+                        <input type="checkbox" id="bb_strict" checked
+                            style="width: 20px; height: 20px; cursor: pointer;">
+                    </div>
+
+                    <div id="bb-warning"
+                        style="display: none; margin-top: 15px; padding: 8px; font-size: 0.75rem; border-radius: 4px; border: 1px solid #ef4444; background: rgba(239, 68, 68, 0.1); color: #fca5a5;">
+                        <!-- Warning text populated by JS -->
+                    </div>
+                </div>
+
                 <h2>Geometry</h2>
                 <div class="control-group">
                     <label>Width <span class="value-display" id="width-val">800</span></label>
@@ -1068,6 +1115,152 @@
                 rightPanel.classList.toggle('minimised');
             };
 
+            // Input Mode Switcher (Explicit vs Fit)
+            const explicitRadio = document.querySelector('input[name="input_mode"][value="explicit"]');
+            const fitRadio = document.querySelector('input[name="input_mode"][value="fit"]');
+            const explicitLabel = document.getElementById('label-explicit');
+            const fitLabel = document.getElementById('label-fit');
+            const bbControls = document.getElementById('bounding-box-controls');
+
+            // Elements to disable during fit mode
+            const explicitInputs = ['s_bottom_steps', 's_top_steps', 'rise', 'going'];
+
+            function updateInputMode() {
+                const isFit = fitRadio.checked;
+
+                // Toggle UI Appearance
+                if (isFit) {
+                    fitLabel.style.background = 'rgba(56,189,248,0.1)';
+                    fitLabel.style.borderColor = 'var(--accent)';
+                    explicitLabel.style.background = 'rgba(255,255,255,0.05)';
+                    explicitLabel.style.borderColor = 'transparent';
+                    bbControls.style.display = 'block';
+
+                    explicitInputs.forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            el.disabled = true;
+                            el.parentElement.style.opacity = '0.5';
+                        }
+                    });
+                } else {
+                    explicitLabel.style.background = 'rgba(56,189,248,0.1)';
+                    explicitLabel.style.borderColor = 'var(--accent)';
+                    fitLabel.style.background = 'rgba(255,255,255,0.05)';
+                    fitLabel.style.borderColor = 'transparent';
+                    bbControls.style.display = 'none';
+
+                    explicitInputs.forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            el.disabled = false;
+                            el.parentElement.style.opacity = '1.0';
+                        }
+                    });
+
+                    // Clear any warnings when switching back
+                    document.getElementById('bb-warning').style.display = 'none';
+                }
+            }
+
+            explicitRadio.addEventListener('change', updateInputMode);
+            fitRadio.addEventListener('change', () => {
+                updateInputMode();
+                calculateFit(); // Trigger calculation immediately when switching to fit mode
+            });
+
+            // Listeners for bounding box changes
+            ['bb_height', 'bb_length', 'bb_width', 'bb_strict'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('change', () => {
+                        if (fitRadio.checked) calculateFit();
+                    });
+                }
+            });
+
+            async function calculateFit() {
+                const height = parseFloat(document.getElementById('bb_height').value);
+                const length = parseFloat(document.getElementById('bb_length').value);
+                const bb_width = parseFloat(document.getElementById('bb_width').value);
+                const strict = document.getElementById('bb_strict').checked;
+
+                const targetTreadWidth = parseFloat(document.getElementById('width').value);
+                const innerRadius = parseFloat(document.getElementById('inner_r').value);
+                const winderSteps = parseInt(document.getElementById('winder_steps').value);
+
+                const warningEl = document.getElementById('bb-warning');
+
+                try {
+                    const response = await fetch('/calculate-fit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            totalHeight: height,
+                            totalLength: length,
+                            totalWidth: bb_width,
+                            targetTreadWidth: targetTreadWidth,
+                            innerRadius: innerRadius,
+                            winderSteps: winderSteps,
+                            strictCompliance: strict
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        warningEl.style.display = 'block';
+                        warningEl.innerText = `Error: ${data.error || 'Failed to find a fit.'}`;
+                        warningEl.style.color = "#f43f5e";
+                        warningEl.style.borderColor = "#f43f5e";
+                        warningEl.style.background = "rgba(244, 63, 94, 0.1)";
+                        return;
+                    }
+
+                    // Update Explicit Inputs with calculated values
+                    const s_bottom = document.getElementById('s_bottom_steps');
+                    const s_top = document.getElementById('s_top_steps');
+                    const rise = document.getElementById('rise');
+                    const going = document.getElementById('going');
+
+                    s_bottom.value = data.s_bottom_steps;
+                    document.getElementById('s_bottom_steps-val').innerText = data.s_bottom_steps;
+
+                    s_top.value = data.s_top_steps;
+                    document.getElementById('s_top_steps-val').innerText = data.s_top_steps;
+
+                    rise.value = data.rise;
+                    document.getElementById('rise-val').innerText = data.rise;
+
+                    going.value = data.going;
+                    document.getElementById('going-val').innerText = data.going;
+
+                    // Handle Compliance Warning
+                    if (!data.is_compliant) {
+                        warningEl.style.display = 'block';
+                        warningEl.innerText = "Warning: The best mathematical fit violates UK Part K regulations (Rise > 220, Going < 220, or Pitch > 42°).";
+                        warningEl.style.color = "#f43f5e"; // Rose
+                        warningEl.style.borderColor = "#f43f5e";
+                        warningEl.style.background = "rgba(244, 63, 94, 0.1)";
+                    } else {
+                        warningEl.style.display = 'block';
+                        warningEl.innerText = `✓ Compliant Fit Found. Pitch: ${data.pitch_deg}°`;
+                        warningEl.style.color = "#10b981"; // Emerald
+                        warningEl.style.borderColor = "#10b981";
+                        warningEl.style.background = "rgba(16, 185, 129, 0.1)";
+                    }
+
+                    // Trigger 3D Model Update
+                    clearTimeout(window._genTimeout);
+                    window._genTimeout = setTimeout(generateModel, 300);
+
+                } catch (e) {
+                    console.error("Fit Calculation Error:", e);
+                    warningEl.style.display = 'block';
+                    warningEl.innerText = "Failed to connect to calculation engine.";
+                }
+            }
+
             // View Switcher
             const btn3d = document.getElementById('view-3d');
             const btnCnc = document.getElementById('view-cnc');
@@ -1149,7 +1342,7 @@
                 }
             };
             // Auto-generate on any parameter change
-            document.querySelectorAll('#controls-panel input').forEach(el => {
+            document.querySelectorAll('#controls-panel input, #controls-panel select').forEach(el => {
                 if (el.id !== 'exploded_view' && el.id !== 'explode_origin') {
                     el.addEventListener('change', () => {
                         // Debounce slightly to prevent lag on sliders
@@ -1176,6 +1369,7 @@
             }
 
             document.getElementById('calculate-nesting').onclick = runNesting;
+            document.getElementById('generate').onclick = generateModel;
         }
 
         function getConfig() {

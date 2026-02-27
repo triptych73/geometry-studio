@@ -31,9 +31,6 @@ DEFAULT_CONFIG = {**PARAM_DEFAULTS,
     "stringer_depth": 220.0,
     "carriage_width":  50.0,
     "carriage_depth": 180.0,
-    "rib_spacing":    300.0,
-    "rib_width":       18.0,
-    "rib_depth":      100.0,
     "plaster_thickness": 10.0,
 }
 
@@ -45,7 +42,6 @@ C_TREAD    = (0.72, 0.52, 0.30)
 C_RISER    = (0.78, 0.60, 0.38)
 C_STRINGER = (0.55, 0.38, 0.20)
 C_CARRIAGE = (0.48, 0.33, 0.18)
-C_RIB      = (0.60, 0.45, 0.25)
 C_PLASTER  = (0.93, 0.91, 0.87)
 C_HANDRAIL = (0.40, 0.26, 0.13) # Rich Walnut Finish
 C_BALUSTER  = (0.20, 0.20, 0.20) # Slate Grey/Metallic
@@ -55,15 +51,12 @@ C_WALKLINE = (0.0, 0.8, 1.0) # Neon blue ribbon
 # WINDER POLYGON HELPER  (exact copy of make_winder logic from stair_helpers)
 # ===========================================================================
 
-def _winder_step_polygon(step_idx, num_steps, winder_width):
+def _winder_step_polygon(sa, ea, winder_width):
     """Return XY polygon points for one winder step, relative to pivot (0,0).
 
     Uses RECTANGULAR outer boundary (bottom edge y=-winder_width, right edge x=winder_width).
     Angles sweep from -90° (down) to 0° (right).
     """
-    angle_per = 90.0 / num_steps
-    sa = -90 + step_idx * angle_per
-    ea = -90 + (step_idx + 1) * angle_per
     a1, a2 = math.radians(sa), math.radians(ea)
     w = winder_width
 
@@ -112,7 +105,7 @@ def _flight_treads_risers(steps, going, rise, width, tread_t, riser_t, nosing=0.
     return treads, risers
 
 
-def _make_stringer_solid(steps, going, rise, depth, thickness, tread_t=20.0, riser_t=20.0, nosing=20.0):
+def _make_stringer_solid(steps, going, rise, depth, thickness, tread_t=20.0, riser_t=20.0, nosing=20.0, str_d_nominal=250.0):
     """Build a single stringer solid entirely in one BuildPart context.
     
     OPTIMIZED: Uses extremely fast 2D Sketch Boolean subtraction to notch out
@@ -125,15 +118,38 @@ def _make_stringer_solid(steps, going, rise, depth, thickness, tread_t=20.0, ris
         with BuildSketch(Plane.XZ):
             # 1. Base Stringer Profile (Solid Sawtooth)
             with BuildLine():
-                pts = [(0, -depth)]
+                pts = []
+                
+                # 1. Start at origin
                 cx, cz = 0.0, 0.0
+                pts.append((cx, cz))
+                
+                # 2. Sawtooth steps
                 for _ in range(steps):
                     pts.append((cx, cz + rise))
                     pts.append((cx + going, cz + rise))
                     cx += going
                     cz += rise
+            
+                # 3. Top boundary plumb cut
+                # We do not horizontally trim the top connection; it vertically hangs 
+                # below the header joist as is structurally standard. 
                 pts.append((length, top_z - depth))
-                pts.append((0, -depth))
+            
+                # 4. Bottom floor seat cut (Z=0)
+                # The stringer mathematically drops below the floor (Z < 0).
+                # To sit flat on the ground, we trim the lowest bounding line horizontally at Z=0.
+                cut_x_floor = depth * going / rise
+                if cut_x_floor > 0 and cut_x_floor < length:
+                    pts.append((cut_x_floor, 0.0))
+                elif cut_x_floor >= length:
+                    pts.append((length, 0.0))
+                else:
+                    pts.append((0, -depth))
+            
+                # 5. Close loop
+                pts.append((0, 0))
+                
                 Polyline(pts)
             make_face()
             
@@ -162,7 +178,7 @@ def _make_stringer_solid(steps, going, rise, depth, thickness, tread_t=20.0, ris
     return bp.part
 
 
-def _flight_stringers(steps, going, rise, width, str_depth, str_width, tread_t=20.0, riser_t=20.0, nosing=20.0):
+def _flight_stringers(steps, going, rise, width, str_depth, str_width, tread_t=20.0, riser_t=20.0, nosing=20.0, str_d_nominal=250.0):
     if steps <= 0: return []
     """Two wall-flush stringers for a straight flight.
 
@@ -171,7 +187,7 @@ def _flight_stringers(steps, going, rise, width, str_depth, str_width, tread_t=2
     """
     stringers = []
     # Inner stringer: at Y=0, extruded -Y → Y from 0 to -str_width
-    inner = _make_stringer_solid(steps, going, rise, str_depth, str_width, tread_t, riser_t, nosing)
+    inner = _make_stringer_solid(steps, going, rise, str_depth, str_width, tread_t, riser_t, nosing, str_d_nominal)
     stringers.append(inner)
     
     # User requested to REMOVE the outer stringer for straight flights and just
@@ -182,7 +198,7 @@ def _flight_stringers(steps, going, rise, width, str_depth, str_width, tread_t=2
     return stringers
 
 
-def _flight_carriages(steps, going, rise, width, car_depth, car_width, tread_t=20.0, riser_t=20.0, nosing=20.0):
+def _flight_carriages(steps, going, rise, width, car_depth, car_width, tread_t=20.0, riser_t=20.0, nosing=20.0, str_d_nominal=250.0):
     if steps <= 0: return []
     """Width-dependent internal carriage beams (central stringers).
 
@@ -195,26 +211,9 @@ def _flight_carriages(steps, going, rise, width, car_depth, car_width, tread_t=2
         frac = (i + 1) / (n_carriages + 1)  # evenly spaced
         # Width extends in -Y: position at -width*frac, centre the carriage
         y_pos = -width * frac + car_width / 2
-        c = _make_stringer_solid(steps, going, rise, car_depth, car_width, tread_t, riser_t, nosing)
+        c = _make_stringer_solid(steps, going, rise, car_depth, car_width, tread_t, riser_t, nosing, str_d_nominal)
         carriages.append(c.translate((0, y_pos, 0)))
     return carriages
-
-
-def _flight_ribs(steps, going, rise, width, waist,
-                 rib_spacing, rib_width, rib_depth):
-    """Soffit ribs perpendicular to flight direction."""
-    length = steps * going
-    slope = rise / going
-    n_ribs = max(2, int(length / rib_spacing) + 1)
-    ribs = []
-    for i in range(n_ribs):
-        x = i * length / (n_ribs - 1) if n_ribs > 1 else 0
-        z_soffit = x * slope - waist
-        # Rib sits ABOVE soffit (supports plaster from inside staircase)
-        rib = Box(rib_width, width, rib_depth,
-                  align=(Align.CENTER, Align.MAX, Align.MIN))
-        ribs.append(rib.translate((x, 0, z_soffit)))
-    return ribs
 
 
 # ===========================================================================
@@ -234,29 +233,25 @@ def _winder_treads_risers(num_steps, rise, winder_width, inner_r,
     for i in range(num_steps):
         z_top = base_z + (i + 1) * rise
         
-        # --- Tread (thin wedge) ---
         # For nosing, we make the start angle of the tread slightly earlier
         # Approximation: shift angle by nosing distance at average radius
         avg_r = inner_r + winder_width / 2
-        nosing_angle = math.degrees(nosing / avg_r)
-        
-        # We also need the tread to extend *backward* into the riser behind it 
-        # to ensure they physically overlap/seal at the inner corner.
-        riser_overlap_angle = math.degrees((riser_t / 2) / inner_r)
+        nosing_angle = math.degrees(nosing / avg_r) if nosing > 0 else 0
         
         sa = -90 + i * angle_per - nosing_angle
-        ea = -90 + (i + 1) * angle_per + riser_overlap_angle
+        ea = -90 + (i + 1) * angle_per
         
-        # We need a modified polygon helper or just inline the logic for nosing
-        # To keep it robust, we'll use the standard polygon but rotate the tread result
-        poly = _winder_step_polygon(i, num_steps, winder_width)
+        # Calculate the polygon exactly intersecting the rectangular boundary
+        # using our shifted start and end angles so we don't need to rotate it later.
+        poly = _winder_step_polygon(sa, ea, winder_width)
         gpts = [(px + p[0], py + p[1]) for p in poly]
         
         with BuildPart() as bp:
-            with BuildSketch(Plane.XY):
+            with BuildSketch(Plane.XY) as sk:
                 with BuildLine():
                     Polyline(gpts)
                 make_face()
+
             extrude(amount=tread_t)
             # Subtract inner void
             with Locations((px, py)):
@@ -264,9 +259,7 @@ def _winder_treads_risers(num_steps, rise, winder_width, inner_r,
                          align=(Align.CENTER, Align.CENTER, Align.CENTER),
                          mode=Mode.SUBTRACT)
         
-        # Rotate the tread slightly clockwise to create the nosing overhang
-        tread_part = bp.part.rotate(Axis((px, py, 0), (0, 0, 1)), -nosing_angle)
-        treads.append(tread_part.translate((0, 0, z_top - tread_t)))
+        treads.append(bp.part.translate((0, 0, z_top - tread_t)))
 
         # --- Riser (thin panel at leading edge angle) ---
         riser_angle = -90 + i * angle_per
@@ -293,42 +286,6 @@ def _winder_treads_risers(num_steps, rise, winder_width, inner_r,
 
     return treads, risers
 
-
-def _winder_ribs(num_steps, rise, winder_width, inner_r,
-                 base_z, waist, rib_spacing, rib_width, rib_depth,
-                 pivot_global):
-    """Radially-fanned CNC-cut plywood soffit ribs for the winder.
-    
-    OPTIMIZED: The rib geometry is calculated exactly (clipped to the outer
-    rectangular corner) so no 3D boolean intersection is needed later.
-    """
-    px, py = pivot_global
-    arc_len = (inner_r + winder_width) / 2 * math.pi / 2
-    n_ribs = max(3, int(arc_len / rib_spacing) + 1)
-    ribs = []
-    for i in range(n_ribs):
-        t = i / (n_ribs - 1) if n_ribs > 1 else 0
-        angle_deg = -90 + t * 90
-        a_rad = math.radians(angle_deg)
-        z_soffit = base_z + t * num_steps * rise - waist
-        
-        # Calculate exact radial length to the rectangular outer boundary
-        if angle_deg < -45:
-            if abs(angle_deg + 90) < 1e-6:
-                r_outer = winder_width
-            else:
-                r_outer = abs(-winder_width / math.sin(a_rad))
-        else:
-            r_outer = abs(winder_width / math.cos(a_rad))
-            
-        radial_len = r_outer - inner_r
-        
-        rib = Box(radial_len, rib_width, rib_depth,
-                  align=(Align.MIN, Align.CENTER, Align.MIN))
-        rib = rib.translate((inner_r, 0, 0))
-        rib = rib.rotate(Axis((0, 0, 0), (0, 0, 1)), angle_deg)
-        ribs.append(rib.translate((px, py, z_soffit)))
-    return ribs
 
 
 def _winder_corner_stringers(volumetric, winder_width, str_width, pivot_global):
@@ -389,12 +346,9 @@ def build_structural_staircase(config):
     tread_t  = config["tread_thickness"]
     riser_t  = config["riser_thickness"]
     str_w    = config["stringer_width"]
-    str_d    = config["stringer_depth"]
+    str_d    = max(config["stringer_depth"], waist)
     car_w    = config["carriage_width"]
-    car_d    = config["carriage_depth"]
-    rib_sp   = config["rib_spacing"]
-    rib_w    = config["rib_width"]
-    rib_d    = config["rib_depth"]
+    car_d    = max(config["carriage_depth"], waist)
 
     winder_width  = width + inner_r
     sb_length     = sb_steps * going
@@ -438,10 +392,10 @@ def build_structural_staircase(config):
     all_treads.extend([p.translate(off_sb) for p in t])
     all_risers.extend([p.translate(off_sb) for p in r])
 
-    s = _flight_stringers(sb_steps, going, rise, width, str_d, str_w, tread_t, riser_t, config.get("nosing", 0))
+    s = _flight_stringers(sb_steps, going, rise, width, str_d, str_w, tread_t, riser_t, config.get("nosing", 0), config["stringer_depth"])
     all_stringers.extend([p.translate(off_sb) for p in s])
 
-    c = _flight_carriages(sb_steps, going, rise, width, car_d, car_w, tread_t, riser_t, config.get("nosing", 0))
+    c = _flight_carriages(sb_steps, going, rise, width, car_d, car_w, tread_t, riser_t, config.get("nosing", 0), config["carriage_depth"])
     # Trim carriages to volumetric envelope (so they don't protrude below soffit)
     all_carriages.extend([p.translate(off_sb) for p in c])
 
@@ -468,8 +422,8 @@ def build_structural_staircase(config):
     # -----------------------------------------------------------------------
     print(f"  Top flight: {st_steps} steps")
     t2, r2 = _flight_treads_risers(st_steps, going, rise, width, tread_t, riser_t, config.get("nosing", 0))
-    s2 = _flight_stringers(st_steps, going, rise, width, str_d, str_w, tread_t, riser_t, config.get("nosing", 0))
-    c2 = _flight_carriages(st_steps, going, rise, width, car_d, car_w, tread_t, riser_t, config.get("nosing", 0))
+    s2 = _flight_stringers(st_steps, going, rise, width, str_d, str_w, tread_t, riser_t, config.get("nosing", 0), config["stringer_depth"])
+    c2 = _flight_carriages(st_steps, going, rise, width, car_d, car_w, tread_t, riser_t, config.get("nosing", 0), config["carriage_depth"])
 
     def _rotate_translate(parts):
         return [p.rotate(Axis.Z, 90).translate((pivot_x + inner_r, 0, st_base_z))
@@ -606,12 +560,11 @@ def display_structural(elements):
     _add("plaster",  elements["plaster"],   C_PLASTER,  0.5)
     _add("stringer", elements["stringers"], C_STRINGER, 1.0)
     _add("carriage", elements["carriages"], C_CARRIAGE, 1.0)
-    _add("rib",      elements["ribs"],      C_RIB,      1.0)
     _add("handrail", elements["handrail"],  C_HANDRAIL, 1.0)
 
     show(*parts, names=names, colors=colours, alphas=alphas)
     n_skin = len(elements["treads"]) + len(elements["risers"]) + len(elements["plaster"])
-    n_struct = len(elements["stringers"]) + len(elements["carriages"]) + len(elements["ribs"])
+    n_struct = len(elements["stringers"]) + len(elements["carriages"])
     print(f"Showing {len(parts)} objects ({n_skin} skin @ 50%, {n_struct} structural @ 100%)")
 
 

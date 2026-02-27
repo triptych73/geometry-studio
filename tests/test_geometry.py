@@ -143,7 +143,7 @@ class TestParametricBuilder:
 class TestStructuralBuilder:
     """Tests for staircase_structural.build_structural_staircase()."""
 
-    EXPECTED_CATEGORIES = {"treads", "risers", "stringers", "carriages", "ribs", "plaster"}
+    EXPECTED_CATEGORIES = {"treads", "risers", "stringers", "carriages", "plaster"}
 
     def _make_config(self, **overrides):
         config = PARAM_DEFAULTS.copy()
@@ -169,8 +169,8 @@ class TestStructuralBuilder:
 
     def test_all_parts_have_positive_volume(self):
         """Every part in every category has volume > 0.
-        NOTE: Thin geometry (plaster, ribs) may report vol=0 in build123d."""
-        THIN_CATS = {"plaster", "ribs"}
+        NOTE: Thin geometry (plaster) may report vol=0 in build123d."""
+        THIN_CATS = {"plaster"}
         config = self._make_config()
         result = build_structural_staircase(config)
         issues = []
@@ -189,7 +189,7 @@ class TestStructuralBuilder:
         result = build_structural_staircase(config)
         issues = []
         for cat, parts in result.items():
-            if cat in ("plaster", "ribs"):  # Thin geometry — known edge case
+            if cat == "plaster":  # Thin geometry — known edge case
                 continue
             for i, p in enumerate(parts):
                 bb = p.bounding_box()

@@ -19,7 +19,6 @@ cfg = {
     'tread_thickness': 20, 'riser_thickness': 20,
     'stringer_width': 50, 'stringer_depth': 220,
     'carriage_width': 50, 'carriage_depth': 180,
-    'rib_spacing': 300, 'rib_width': 18, 'rib_depth': 100,
     'plaster_thickness': 10,
 }
 

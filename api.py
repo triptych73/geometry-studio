@@ -19,11 +19,12 @@ from staircase_parametric import build_staircase, DEFAULT_CONFIG as PARAM_DEFAUL
 from staircase_structural import (
     build_structural_staircase,
     DEFAULT_CONFIG as STRUCT_DEFAULTS,
-    C_TREAD, C_RISER, C_STRINGER, C_CARRIAGE, C_RIB, C_PLASTER, C_HANDRAIL,
+    C_TREAD, C_RISER, C_STRINGER, C_CARRIAGE, C_PLASTER, C_HANDRAIL,
     C_BALUSTER, C_WALKLINE,
 )
 from bom_export import generate_csv
 from cnc_nesting import extract_2d_profile, nest_parts_optimized, split_with_scarf_joint
+from solvers import solve_l_shape, ComplianceError
 
 app = FastAPI()
 
@@ -60,9 +61,6 @@ class StaircaseConfig(BaseModel):
     stringer_depth: float = 250.0
     carriage_width: float = 50.0
     carriage_depth: float = 250.0
-    rib_spacing: float = 400.0
-    rib_width: float = 18.0
-    rib_depth: float = 150.0
     plaster_thickness: float = 10.0
 
 class CncNestRequest(BaseModel):
@@ -70,6 +68,36 @@ class CncNestRequest(BaseModel):
     categories: list[str]
     sheet_width: float = 2440.0
     sheet_height: float = 1220.0
+
+class FitToSpaceRequest(BaseModel):
+    totalHeight: float
+    totalLength: float
+    totalWidth: float
+    targetTreadWidth: float
+    innerRadius: float
+    winderSteps: int = 3
+    strictCompliance: bool = True
+
+@app.post("/calculate-fit")
+async def calculate_fit(req: FitToSpaceRequest):
+    """Calculates optimal staircase parameters based on bounding box and Part K."""
+    try:
+        result = solve_l_shape(
+            total_height=req.totalHeight,
+            max_length=req.totalLength,
+            max_width=req.totalWidth,
+            target_tread_width=req.targetTreadWidth,
+            inner_r=req.innerRadius,
+            winder_steps=req.winderSteps,
+            strict_compliance=req.strictCompliance
+        )
+        return JSONResponse(result)
+    except ComplianceError as e:
+        return JSONResponse({"error": str(e)}, status_code=422)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/cnc/nest")
 async def get_nested_layout(req: CncNestRequest):
@@ -340,12 +368,13 @@ async def get_defaults():
 
 @app.post("/generate")
 async def generate_staircase(config: StaircaseConfig):
+    import uuid
     try:
         config_dict = config.dict()
         model_type = config_dict.pop("model_type", "volumetric")
 
         temp_dir = tempfile.gettempdir()
-        gltf_path = os.path.join(temp_dir, "staircase_output.gltf")
+        gltf_path = os.path.join(temp_dir, f"staircase_output_{uuid.uuid4().hex}.gltf")
 
         if model_type == "structural":
             for key, default_val in STRUCT_DEFAULTS.items():
@@ -418,7 +447,14 @@ async def generate_staircase(config: StaircaseConfig):
         else:
             print(f"[API] Building volumetric model...")
             stair = build_staircase(config_dict)
-            export_gltf(stair, gltf_path)
+            
+            # The boolean subtraction in the parametric builder might return a ShapeList of multiple disjoint solids
+            try:
+                stair_comp = Compound(stair.solids() if hasattr(stair, 'solids') else stair)
+            except Exception:
+                stair_comp = stair
+                
+            export_gltf(stair_comp, gltf_path)
             glb_bytes = pack_glb(gltf_path)
 
             return JSONResponse({
